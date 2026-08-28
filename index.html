@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kimo AI</title>
-    <!-- Marked.js para renderização de Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Lucide Icons via CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -54,7 +52,7 @@
             padding: 24px;
         }
 
-        /* --- Tela de Permissões Android Reais --- */
+        /* --- Tela de Permissões Android --- */
         #permissionOverlay {
             display: none;
             position: fixed;
@@ -308,6 +306,21 @@
             width: 100%;
         }
 
+        .btn-secondary {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
         @media (max-width: 768px) {
             .sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
@@ -317,7 +330,6 @@
 </head>
 <body>
 
-    <!-- Bloqueio para PC / Navegador Normal -->
     <div id="pcBlockOverlay">
         <i data-lucide="smartphone" style="width: 56px; height: 56px; margin-bottom: 16px; color: var(--accent);"></i>
         <h2 style="margin-bottom: 12px;">Acesso Bloqueado</h2>
@@ -326,7 +338,6 @@
         </p>
     </div>
 
-    <!-- Tela de Permissões Android -->
     <div id="permissionOverlay">
         <div class="permission-card">
             <i data-lucide="shield-alert" style="width: 48px; height: 48px; color: var(--accent);"></i>
@@ -354,7 +365,6 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -378,7 +388,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="topbar">
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -411,7 +420,6 @@
         </div>
     </div>
 
-    <!-- Modal Configurações -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -430,11 +438,17 @@
                 <div style="background: var(--bg-sidebar); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
                     <label style="font-size: 13px; color: var(--text-secondary);">Gestão de Ficheiro .gguf</label>
                     <input type="file" id="ggufFileInput" accept=".gguf" style="display:none;" onchange="handleGGUFFileSelect(event)">
-                    <button class="btn-primary" style="background-color: var(--bg-input); border: 1px solid var(--border);" onclick="document.getElementById('ggufFileInput').click()">
-                        <i data-lucide="folder-open" style="width: 18px; height: 18px;"></i> Selecionar .gguf
+                    
+                    <button class="btn-secondary" onclick="document.getElementById('ggufFileInput').click()">
+                        <i data-lucide="folder-open" style="width: 18px; height: 18px;"></i> Selecionar Ficheiro
                     </button>
-                    <span id="ggufStatusInfo" style="font-size: 12px; color: var(--accent);">Nenhum ficheiro selecionado</span>
+                    
+                    <span id="ggufStatusInfo" style="font-size: 12px; color: var(--text-secondary);">Nenhum ficheiro selecionado</span>
                     <span id="ggufErrorMsg" style="font-size: 12px; color: var(--error); display: none;">❌ Erro: O ficheiro precisa de terminar em .gguf!</span>
+                    
+                    <button class="btn-primary" id="addGgufBtn" style="margin-top: 4px; display: none;" onclick="addSelectedGgufModel()">
+                        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Adicionar Modelo
+                    </button>
                 </div>
             </div>
             <button class="btn-primary" onclick="saveSettings()">
@@ -445,6 +459,8 @@
 
     <script>
         lucide.createIcons();
+
+        let pendingFileObj = null;
 
         function checkEnvironment() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -497,23 +513,41 @@
             }
         }
 
+        // Lê e valida o ficheiro .gguf selecionado
         function handleGGUFFileSelect(event) {
             const file = event.target.files[0];
             const errorMsg = document.getElementById('ggufErrorMsg');
             const statusInfo = document.getElementById('ggufStatusInfo');
+            const addBtn = document.getElementById('addGgufBtn');
 
             if (file) {
                 if (file.name.toLowerCase().endsWith('.gguf')) {
                     errorMsg.style.display = 'none';
-                    localStorage.setItem('kimo_selected_gguf_name', file.name);
-                    statusInfo.textContent = `Válido: ${file.name}`;
-                    updateModelDropdownOptions();
+                    pendingFileObj = file;
+                    statusInfo.innerHTML = `Detectado: <b>${file.name}</b>`;
+                    addBtn.style.display = 'flex'; // Mostra o botão Adicionar
                 } else {
                     errorMsg.style.display = 'block';
                     statusInfo.textContent = "Ficheiro inválido";
+                    addBtn.style.display = 'none';
+                    pendingFileObj = null;
                     event.target.value = ""; 
                 }
             }
+        }
+
+        // Botão Adicionar: Guarda o nome do modelo e atualiza a barra superior
+        function addSelectedGgufModel() {
+            if (!pendingFileObj) return;
+
+            const modelName = pendingFileObj.name;
+            localStorage.setItem('kimo_selected_gguf_name', modelName);
+            
+            document.getElementById('ggufStatusInfo').innerHTML = `✅ Adicionado com sucesso: <b>${modelName}</b>`;
+            document.getElementById('addGgufBtn').style.display = 'none';
+            
+            updateModelDropdownOptions();
+            lucide.createIcons();
         }
 
         function updateModelDropdownOptions() {
@@ -537,7 +571,7 @@
         window.onload = () => {
             checkEnvironment();
             checkPermissions();
-            document.getElementById('initialBotMsg').innerHTML = marked.parse("Olá! O **Kimo AI** está pronto. Seleciona o teu modelo `.gguf` (ex: Qwen 1.5B) nas **Configurações** para começar!");
+            document.getElementById('initialBotMsg').innerHTML = marked.parse("Olá! O **Kimo AI** está pronto. Seleciona o teu modelo `.gguf` (ex: Qwen 1.5B) nas **Configurações** e clica em **Adicionar** para começar!");
             loadSettings();
         };
 
@@ -550,7 +584,7 @@
         function loadSettings() {
             const savedGgufName = localStorage.getItem('kimo_selected_gguf_name');
             if (savedGgufName) {
-                document.getElementById('ggufStatusInfo').textContent = `Atual: ${savedGgufName}`;
+                document.getElementById('ggufStatusInfo').innerHTML = `Atual ativo: <b>${savedGgufName}</b>`;
             }
             updateModelDropdownOptions();
         }
@@ -584,7 +618,7 @@
                 chatBox.innerHTML += `
                     <div class="message-row">
                         <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
-                        <div class="message-content">⚠️ Nenhum modelo <b>.gguf</b> ativo. Vai a Configurações e escolhe um modelo como o Qwen 1.5B.</div>
+                        <div class="message-content">⚠️ Nenhum modelo <b>.gguf</b> ativo. Vai a Configurações, escolhe o ficheiro e clica em <b>Adicionar</b>.</div>
                     </div>`;
                 lucide.createIcons();
                 return;
