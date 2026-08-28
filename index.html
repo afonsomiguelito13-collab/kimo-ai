@@ -3,17 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kimo AI v1.1.5</title>
-    <!-- Marked.js para renderização de Markdown -->
+    <meta name="theme-color" content="#212121">
+    <title>Kimo AI v1.1.7</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <!-- Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Lucide Icons via CDN -->
+
+    <!-- Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Wllama -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@wllama/wllama": "https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/index.js"
+        }
+    }
+    </script>
+
     <style>
         :root {
             --bg-main: #212121;
             --bg-sidebar: #171717;
             --bg-input: #2f2f2f;
-            --bg-hover: #2f2f2f;
+            --bg-hover: #343434;
             --text-primary: #ececec;
             --text-secondary: #b4b4b4;
             --accent: #10a37f;
@@ -21,29 +36,62 @@
             --border: #383838;
             --error: #ef4444;
             --success: #22c55e;
+            --warning: #f59e0b;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Helvetica,
+                Arial,
+                sans-serif;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
         }
 
         body {
             background-color: var(--bg-main);
             color: var(--text-primary);
             display: flex;
-            height: 100vh;
             overflow: hidden;
         }
 
-        /* --- Overlay de Bloqueio PC / Navegador Normal --- */
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .kimo-logo-img {
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        /* =========================================================
+           PC BLOCK
+        ========================================================= */
+
         #pcBlockOverlay {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
             background-color: #171717;
             color: #ececec;
             z-index: 99999;
@@ -54,13 +102,15 @@
             padding: 24px;
         }
 
-        /* --- Tela de Permissões Android --- */
+        /* =========================================================
+           PERMISSION
+        ========================================================= */
+
         #permissionOverlay {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background-color: rgba(0,0,0,0.85);
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.85);
             z-index: 99998;
             flex-direction: column;
             align-items: center;
@@ -70,11 +120,12 @@
         }
 
         .permission-card {
+            width: 100%;
+            max-width: 380px;
             background-color: var(--bg-sidebar);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 28px;
-            max-width: 380px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -100,14 +151,19 @@
             color: var(--text-secondary);
         }
 
-        /* --- Sidebar & Layout --- */
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
         .sidebar {
             width: 260px;
+            height: 100%;
             background-color: var(--bg-sidebar);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .sidebar-header {
@@ -144,17 +200,26 @@
             text-align: left;
         }
 
-        .nav-btn:hover { background-color: var(--bg-hover); }
+        .nav-btn:hover {
+            background-color: var(--bg-hover);
+        }
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
 
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            width: 100%;
+            width: calc(100% - 260px);
+            min-width: 0;
+            height: 100%;
         }
 
         .topbar {
             height: 60px;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -170,6 +235,13 @@
             cursor: pointer;
         }
 
+        .model-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
         select {
             background-color: transparent;
             color: var(--text-primary);
@@ -177,10 +249,17 @@
             font-size: 14px;
             font-weight: 600;
             outline: none;
-            max-width: 200px;
+            max-width: 320px;
         }
 
-        select option { background-color: var(--bg-input); }
+        select option {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        /* =========================================================
+           CHAT
+        ========================================================= */
 
         .chat-container {
             flex: 1;
@@ -189,6 +268,7 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
+            scroll-behavior: smooth;
         }
 
         .message-row {
@@ -201,27 +281,78 @@
         }
 
         .avatar {
-            width: 32px; height: 32px;
-            border-radius: 6px;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            overflow: hidden;
         }
 
-        .avatar.bot { background-color: var(--accent); color: white; }
-        .avatar.user { background-color: var(--bg-input); color: white; }
+        .avatar.bot {
+            background-color: #000;
+        }
+
+        .avatar.user {
+            background-color: var(--bg-input);
+            color: white;
+        }
+
+        .avatar.bot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
         .message-content {
             font-size: 15px;
             line-height: 1.6;
             flex: 1;
             word-break: break-word;
+            min-width: 0;
         }
+
+        .message-content p {
+            margin-bottom: 10px;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-content pre {
+            overflow-x: auto;
+            background: #111;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .message-content code {
+            background: rgba(255,255,255,0.06);
+            padding: 2px 5px;
+            border-radius: 5px;
+        }
+
+        .message-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        /* =========================================================
+           INPUT
+        ========================================================= */
 
         .input-area {
             padding: 20px;
-            background: linear-gradient(180deg, transparent, var(--bg-main) 20%);
+            background: linear-gradient(
+                180deg,
+                transparent,
+                var(--bg-main) 20%
+            );
         }
 
         .input-box {
@@ -236,14 +367,23 @@
             border: 1px solid var(--border);
         }
 
+        .input-box:focus-within {
+            border-color: #4b4b4b;
+        }
+
         .input-box input {
             flex: 1;
             background: transparent;
             border: none;
             color: var(--text-primary);
             font-size: 15px;
-            padding: 10px 40px 10px 0;
+            padding: 10px 50px 10px 0;
             outline: none;
+            min-width: 0;
+        }
+
+        .input-box input::placeholder {
+            color: #858585;
         }
 
         .send-btn {
@@ -252,7 +392,8 @@
             background-color: var(--text-primary);
             color: var(--bg-main);
             border: none;
-            width: 32px; height: 32px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -260,11 +401,19 @@
             cursor: pointer;
         }
 
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* =========================================================
+           MODAL
+        ========================================================= */
+
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0,0,0,0.6);
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -311,6 +460,10 @@
             width: 100%;
         }
 
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
         .btn-secondary {
             background-color: var(--bg-input);
             color: var(--text-primary);
@@ -326,364 +479,1867 @@
             width: 100%;
         }
 
+        .btn-secondary:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .status-box {
+            background: var(--bg-sidebar);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .progress-box {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #111;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.2s ease;
+        }
+
+        .small-note {
+            color: var(--text-secondary);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
         @media (max-width: 768px) {
-            .sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
-            .menu-toggle { display: block; }
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 8px 0 30px rgba(0, 0, 0, 0.25);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .main-content {
+                width: 100%;
+            }
+
+            .message-row {
+                padding: 0 8px;
+            }
+
+            .input-area {
+                padding: 12px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <!-- Bloqueio para PC / Navegador Normal -->
+    <!-- =========================================================
+         PC BLOCK
+    ========================================================== -->
+
     <div id="pcBlockOverlay">
-        <i data-lucide="smartphone" style="width: 56px; height: 56px; margin-bottom: 16px; color: var(--accent);"></i>
-        <h2 style="margin-bottom: 12px;">Acesso Bloqueado</h2>
-        <p style="color: #b4b4b4; font-size: 16px; max-width: 320px;">
-            Por favor mude pra versão de apk para continuar a usar o Kimo AI.
+        <img
+            id="kimoLogoBlock"
+            class="kimo-logo-img"
+            style="width:72px;height:72px;margin-bottom:16px;"
+            alt="Kimo Logo"
+        >
+
+        <h2 style="margin-bottom:12px;">
+            Acesso Bloqueado
+        </h2>
+
+        <p style="color:#b4b4b4;font-size:16px;max-width:320px;">
+            Por favor use a versão APK/WebView do Kimo AI para carregar
+            modelos GGUF localmente.
         </p>
     </div>
 
-    <!-- Tela de Permissões Android -->
+    <!-- =========================================================
+         PERMISSION
+    ========================================================== -->
+
     <div id="permissionOverlay">
         <div class="permission-card">
-            <i data-lucide="shield-alert" style="width: 48px; height: 48px; color: var(--accent);"></i>
-            <h3>Permissões do Android</h3>
-            <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.4;">
-                O Kimo AI requer acesso ao sistema para carregar modelos <b>.gguf</b> e gerir o motor localmente.
+
+            <img
+                id="kimoLogoPerm"
+                class="kimo-logo-img"
+                style="width:60px;height:60px;"
+                alt="Kimo Logo"
+            >
+
+            <h3>Permissões do Kimo AI</h3>
+
+            <p style="color:var(--text-secondary);font-size:13px;line-height:1.4;">
+                O Kimo AI usa o ficheiro GGUF selecionado por ti para
+                executar o modelo localmente no dispositivo.
             </p>
+
             <div class="permission-list">
+
                 <div class="permission-item">
                     <span>INTERNET</span>
-                    <span style="color: var(--success);">✓ Ativo</span>
+                    <span style="color:var(--success);">
+                        ✓ Ativo
+                    </span>
                 </div>
+
                 <div class="permission-item">
                     <span>STORAGE ACCESS</span>
-                    <span id="permStorageStatus" style="color: var(--success);">Disponível (SAF)</span>
+                    <span
+                        id="permStorageStatus"
+                        style="color:var(--success);"
+                    >
+                        Disponível (SAF)
+                    </span>
                 </div>
+
             </div>
-            <button class="btn-primary" onclick="requestAndroidPermissions()">
-                <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Continuar
+
+            <button
+                class="btn-primary"
+                onclick="requestAndroidPermissions()"
+            >
+                <i
+                    data-lucide="check-circle"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Continuar
             </button>
         </div>
     </div>
 
-    <!-- Sidebar -->
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================== -->
+
     <div class="sidebar" id="sidebar">
+
         <div class="sidebar-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="bot" style="color: var(--accent);"></i>
-                <span>KIMO AI <span style="font-size: 11px; background: var(--bg-input); padding: 2px 6px; border-radius: 4px; color: var(--accent);">v1.1.5</span></span>
+
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+
+                <img
+                    id="kimoLogoNav"
+                    class="kimo-logo-img"
+                    style="width:26px;height:26px;"
+                    alt="Kimo Logo"
+                >
+
+                <span style="white-space:nowrap;">
+                    KIMO AI
+                    <span
+                        style="
+                            font-size:11px;
+                            background:var(--bg-input);
+                            padding:2px 6px;
+                            border-radius:4px;
+                            color:var(--accent);
+                        "
+                    >
+                        v1.1.7
+                    </span>
+                </span>
+
             </div>
-            <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeSidebar()">
-                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+
+            <button
+                style="
+                    background:none;
+                    border:none;
+                    color:white;
+                    cursor:pointer;
+                "
+                onclick="closeSidebar()"
+            >
+                <i
+                    data-lucide="x"
+                    style="width:20px;height:20px;"
+                ></i>
             </button>
+
         </div>
+
         <div class="nav-menu">
-            <button class="nav-btn" onclick="closeSidebar()">
-                <i data-lucide="message-square" style="width: 18px; height: 18px;"></i> Voltar ao Chat
+
+            <button
+                class="nav-btn"
+                onclick="closeSidebar()"
+            >
+                <i
+                    data-lucide="message-square"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Voltar ao Chat
             </button>
-            <button class="nav-btn" onclick="openModal('settingsModal')">
-                <i data-lucide="settings" style="width: 18px; height: 18px;"></i> Configurações & Modelos
+
+            <button
+                class="nav-btn"
+                onclick="openModal('settingsModal')"
+            >
+                <i
+                    data-lucide="settings"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Configurações & Modelos
             </button>
-            <button class="nav-btn" onclick="openModal('changelogModal')">
-                <i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Update Log (v1.1.5)
+
+            <button
+                class="nav-btn"
+                onclick="openModal('changelogModal')"
+            >
+                <i
+                    data-lucide="file-text"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Update Log
             </button>
-            <button class="nav-btn" onclick="openModal('policyModal')">
-                <i data-lucide="shield" style="width: 18px; height: 18px;"></i> Políticas de Privacidade
+
+            <button
+                class="nav-btn"
+                onclick="openModal('policyModal')"
+            >
+                <i
+                    data-lucide="shield"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Políticas de Privacidade
             </button>
-            <button class="nav-btn" style="color:#f87171; margin-top:auto;" onclick="limparChat()">
-                <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i> Limpar Conversa
+
+            <button
+                class="nav-btn"
+                style="color:#f87171;margin-top:auto;"
+                onclick="limparChat()"
+            >
+                <i
+                    data-lucide="trash-2"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Limpar Conversa
             </button>
+
         </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- =========================================================
+         MAIN CONTENT
+    ========================================================== -->
+
     <div class="main-content">
+
         <div class="topbar">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="menu-toggle" onclick="toggleSidebar()">
-                    <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
+
+            <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+
+                <button
+                    class="menu-toggle"
+                    onclick="toggleSidebar()"
+                >
+                    <i
+                        data-lucide="menu"
+                        style="width:20px;height:20px;"
+                    ></i>
                 </button>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
+
+                <div class="model-header">
+
+                    <img
+                        id="kimoLogoTop"
+                        class="kimo-logo-img"
+                        style="width:22px;height:22px;"
+                        alt="Kimo Logo"
+                    >
+
                     <select id="modelSelect">
-                        <option value="">Nenhum modelo selecionado</option>
+                        <option value="">
+                            Nenhum modelo selecionado
+                        </option>
                     </select>
+
                 </div>
+
             </div>
+
+            <div
+                id="runtimeStatus"
+                style="
+                    color:var(--text-secondary);
+                    font-size:11px;
+                    white-space:nowrap;
+                "
+            >
+                Runtime: aguardando
+            </div>
+
         </div>
 
-        <div class="chat-container" id="chatBox">
+        <div
+            class="chat-container"
+            id="chatBox"
+        >
+
             <div class="message-row">
-                <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
-                <div class="message-content" id="initialBotMsg"></div>
+
+                <div class="avatar bot">
+                    <img
+                        src="icon.png"
+                        class="kimo-logo-img avatar-img"
+                        alt="Kimo"
+                    >
+                </div>
+
+                <div
+                    class="message-content"
+                    id="initialBotMsg"
+                ></div>
+
             </div>
+
         </div>
 
         <div class="input-area">
+
             <div class="input-box">
-                <input type="text" id="userInput" placeholder="Escreve uma mensagem..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                    <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+
+                <input
+                    type="text"
+                    id="userInput"
+                    placeholder="Escreve uma mensagem..."
+                    autocomplete="off"
+                    spellcheck="true"
+                >
+
+                <button
+                    class="send-btn"
+                    id="sendBtn"
+                    onclick="sendMessage()"
+                    aria-label="Enviar"
+                >
+                    <i
+                        data-lucide="send"
+                        style="width:16px;height:16px;"
+                    ></i>
                 </button>
+
             </div>
+
         </div>
+
     </div>
 
-    <!-- Modal Configurações -->
-    <div class="modal-overlay" id="settingsModal">
+    <!-- =========================================================
+         SETTINGS MODAL
+    ========================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="settingsModal"
+    >
+
         <div class="modal">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+
+            <div
+                style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                "
+            >
+
                 <h3>Configurações</h3>
-                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeModal('settingsModal')">
-                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+
+                <button
+                    style="
+                        background:none;
+                        border:none;
+                        color:white;
+                        cursor:pointer;
+                    "
+                    onclick="closeModal('settingsModal')"
+                >
+                    <i
+                        data-lucide="x"
+                        style="width:20px;height:20px;"
+                    ></i>
                 </button>
+
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <label style="font-size: 14px; color: var(--text-secondary);">Método LLM</label>
-                <select class="modal-input" id="llmProvider">
-                    <option value="sem_ollama">Local GGUF (Modo Direto)</option>
-                    <option value="ollama">Ollama (Termux)</option>
+
+            <div
+                style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:12px;
+                "
+            >
+
+                <label
+                    style="
+                        font-size:14px;
+                        color:var(--text-secondary);
+                    "
+                >
+                    Método LLM
+                </label>
+
+                <select
+                    class="modal-input"
+                    id="llmProvider"
+                >
+                    <option value="sem_ollama">
+                        Local GGUF (Wllama)
+                    </option>
+
+                    <option value="ollama">
+                        Ollama (Termux)
+                    </option>
                 </select>
 
-                <div style="background: var(--bg-sidebar); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 13px; color: var(--text-secondary);">Gestão de Ficheiro .gguf</label>
-                    <input type="file" id="ggufFileInput" accept=".gguf" style="display:none;" onchange="handleGGUFFileSelect(event)">
-                    
-                    <button class="btn-secondary" onclick="document.getElementById('ggufFileInput').click()">
-                        <i data-lucide="folder-open" style="width: 18px; height: 18px;"></i> Selecionar Ficheiro .gguf
+                <div
+                    style="
+                        background:var(--bg-sidebar);
+                        padding:12px;
+                        border-radius:8px;
+                        border:1px solid var(--border);
+                        display:flex;
+                        flex-direction:column;
+                        gap:10px;
+                    "
+                >
+
+                    <label
+                        style="
+                            font-size:13px;
+                            color:var(--text-secondary);
+                        "
+                    >
+                        Gestão de Ficheiro .gguf
+                    </label>
+
+                    <input
+                        type="file"
+                        id="ggufFileInput"
+                        accept=".gguf"
+                        style="display:none;"
+                        onchange="handleGGUFFileSelect(event)"
+                    >
+
+                    <button
+                        class="btn-secondary"
+                        id="selectGgufBtn"
+                        onclick="
+                            document
+                            .getElementById('ggufFileInput')
+                            .click()
+                        "
+                    >
+
+                        <i
+                            data-lucide="folder-open"
+                            style="width:18px;height:18px;"
+                        ></i>
+
+                        Selecionar Ficheiro .gguf
+
                     </button>
-                    
-                    <span id="ggufStatusInfo" style="font-size: 12px; color: var(--text-secondary);">Nenhum ficheiro selecionado</span>
-                    <span id="ggufErrorMsg" style="font-size: 12px; color: var(--error); display: none;">❌ Erro: O ficheiro precisa de terminar em .gguf!</span>
-                    
-                    <!-- Botão Adicionar Ficheiro .gguf -->
-                    <button class="btn-primary" id="addGgufBtn" style="margin-top: 4px; display: none;" onclick="addSelectedGgufModel()">
-                        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Adicionar Modelo
+
+                    <span
+                        id="ggufStatusInfo"
+                        class="status-box"
+                    >
+                        Nenhum ficheiro selecionado
+                    </span>
+
+                    <span
+                        id="ggufErrorMsg"
+                        style="
+                            font-size:12px;
+                            color:var(--error);
+                            display:none;
+                        "
+                    >
+                        ❌ O ficheiro precisa terminar em .gguf.
+                    </span>
+
+                    <div
+                        class="progress-box"
+                        id="progressBox"
+                    >
+
+                        <div
+                            style="
+                                display:flex;
+                                justify-content:space-between;
+                                font-size:12px;
+                                color:var(--text-secondary);
+                            "
+                        >
+
+                            <span id="progressText">
+                                A preparar...
+                            </span>
+
+                            <span id="progressPercent">
+                                0%
+                            </span>
+
+                        </div>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-bar"
+                                id="progressBar"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="btn-primary"
+                        id="addGgufBtn"
+                        style="display:none;"
+                        onclick="addSelectedGgufModel()"
+                    >
+
+                        <i
+                            data-lucide="cpu"
+                            style="width:18px;height:18px;"
+                        ></i>
+
+                        Carregar Modelo
+
                     </button>
+
+                    <div class="small-note">
+                        O ficheiro precisa permanecer acessível ao WebView
+                        durante o carregamento. O nome salvo no LocalStorage
+                        não contém os dados do modelo.
+                    </div>
+
                 </div>
+
             </div>
-            <button class="btn-primary" onclick="saveSettings()">
-                <i data-lucide="save" style="width: 18px; height: 18px;"></i> Guardar
+
+            <button
+                class="btn-primary"
+                onclick="saveSettings()"
+            >
+                <i
+                    data-lucide="save"
+                    style="width:18px;height:18px;"
+                ></i>
+
+                Guardar
+
             </button>
+
         </div>
     </div>
 
-    <!-- Modal Update Log (v1.1.5) -->
-    <div class="modal-overlay" id="changelogModal">
+    <!-- =========================================================
+         CHANGELOG
+    ========================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="changelogModal"
+    >
+
         <div class="modal">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>Update Log - v1.1.5</h3>
-                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeModal('changelogModal')">
-                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+
+            <div
+                style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                "
+            >
+
+                <h3>Update Log - v1.1.7</h3>
+
+                <button
+                    style="
+                        background:none;
+                        border:none;
+                        color:white;
+                        cursor:pointer;
+                    "
+                    onclick="closeModal('changelogModal')"
+                >
+                    <i
+                        data-lucide="x"
+                        style="width:20px;height:20px;"
+                    ></i>
                 </button>
+
             </div>
-            <div style="font-size: 14px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 10px; line-height: 1.5;">
-                <p>🚀 <b style="color: var(--text-primary);">O que há de novo na v1.1.5:</b></p>
-                <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 6px;">
-                    <li><b>Leitor Robustecido de .gguf:</b> Correção total na leitura e captura do nome exato do ficheiro no Android WebView.</li>
-                    <li><b>Botão Adicionar Dinâmico:</b> Confirmação visual imediata do modelo carregado com notificação direta no chat.</li>
-                    <li><b>Políticas de Privacidade:</b> Adicionada secção dedicada a normas de dados e funcionamento local.</li>
-                    <li><b>Otimização de APK:</b> Suporte completo a Storage Access Framework (SAF) para Android 13+.</li>
+
+            <div
+                style="
+                    font-size:14px;
+                    color:var(--text-secondary);
+                    display:flex;
+                    flex-direction:column;
+                    gap:10px;
+                    line-height:1.5;
+                "
+            >
+
+                <p>
+                    🚀
+                    <b style="color:var(--text-primary);">
+                        O que há de novo:
+                    </b>
+                </p>
+
+                <ul
+                    style="
+                        padding-left:20px;
+                        display:flex;
+                        flex-direction:column;
+                        gap:6px;
+                    "
+                >
+
+                    <li>
+                        Carregamento real de ficheiros GGUF.
+                    </li>
+
+                    <li>
+                        Inferência local através do Wllama.
+                    </li>
+
+                    <li>
+                        Respostas do modelo no chat.
+                    </li>
+
+                    <li>
+                        Streaming da resposta quando suportado.
+                    </li>
+
+                    <li>
+                        Tratamento de erros de carregamento e inferência.
+                    </li>
+
                 </ul>
+
             </div>
-            <button class="btn-primary" onclick="closeModal('changelogModal')">Fechar</button>
+
+            <button
+                class="btn-primary"
+                onclick="closeModal('changelogModal')"
+            >
+                Fechar
+            </button>
+
         </div>
+
     </div>
 
-    <!-- Modal Políticas de Privacidade -->
-    <div class="modal-overlay" id="policyModal">
+    <!-- =========================================================
+         PRIVACY
+    ========================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="policyModal"
+    >
+
         <div class="modal">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+
+            <div
+                style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                "
+            >
+
                 <h3>Políticas de Privacidade</h3>
-                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeModal('policyModal')">
-                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+
+                <button
+                    style="
+                        background:none;
+                        border:none;
+                        color:white;
+                        cursor:pointer;
+                    "
+                    onclick="closeModal('policyModal')"
+                >
+                    <i
+                        data-lucide="x"
+                        style="width:20px;height:20px;"
+                    ></i>
                 </button>
+
             </div>
-            <div style="font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 10px; line-height: 1.5;">
-                <p>O <b style="color: var(--text-primary);">Kimo AI</b> foi desenvolvido com total foco na privacidade e execução local.</p>
-                <p><b>1. Armazenamento Local:</b> Todos os dados de configuração e o registo de conversas são armazenados exclusivamente no dispositivo do utilizador (via LocalStorage).</p>
-                <p><b>2. Modelos GGUF:</b> Os modelos de inteligência artificial são processados localmente no hardware do telemóvel, sem envio de dados pessoais para servidores externos.</p>
-                <p><b>3. Permissões:</b> A aplicação apenas solicita acesso aos ficheiros selecionados explicitamente pelo utilizador através do seletor nativo do sistema.</p>
+
+            <div
+                style="
+                    font-size:13px;
+                    color:var(--text-secondary);
+                    display:flex;
+                    flex-direction:column;
+                    gap:10px;
+                    line-height:1.5;
+                "
+            >
+
+                <p>
+                    O <b style="color:var(--text-primary);">
+                        Kimo AI
+                    </b>
+                    executa o modelo GGUF localmente no dispositivo
+                    através do runtime integrado.
+                </p>
+
+                <p>
+                    <b>1. Armazenamento Local:</b>
+                    configurações e informações da interface podem ser
+                    guardadas no LocalStorage.
+                </p>
+
+                <p>
+                    <b>2. Modelo GGUF:</b>
+                    depois de carregado, o modelo é processado localmente
+                    pelo runtime.
+                </p>
+
+                <p>
+                    <b>3. Ficheiros:</b>
+                    o utilizador escolhe explicitamente qual ficheiro GGUF
+                    deseja carregar.
+                </p>
+
             </div>
-            <button class="btn-primary" onclick="closeModal('policyModal')">Entendido</button>
+
+            <button
+                class="btn-primary"
+                onclick="closeModal('policyModal')"
+            >
+                Entendido
+            </button>
+
         </div>
+
     </div>
 
-    <script>
-        lucide.createIcons();
+    <!-- =========================================================
+         APPLICATION
+    ========================================================== -->
 
-        let pendingFileObj = null;
+    <script type="module">
+
+        import { Wllama } from "@wllama/wllama";
+
+        /* =====================================================
+           GLOBAL STATE
+        ===================================================== */
+
+        let wllama = null;
+        let pendingFile = null;
+        let loadedModelName = null;
+        let isGenerating = false;
+
+        const chatHistory = [];
+
+        const WLLAMA_CONFIG = {
+            // O runtime wasm.
+            // Dependendo da build do Wllama escolhida,
+            // esta URL pode ser alterada.
+            wasmPath:
+                "https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/wasm"
+        };
+
+        /* =====================================================
+           DOM HELPERS
+        ===================================================== */
+
+        const $ = id => document.getElementById(id);
+
+        function setRuntimeStatus(text) {
+            const el = $("runtimeStatus");
+
+            if (el) {
+                el.textContent = text;
+            }
+        }
+
+        function scrollChat() {
+            const box = $("chatBox");
+
+            if (box) {
+                box.scrollTop = box.scrollHeight;
+            }
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        /* =====================================================
+           LOGOS
+        ===================================================== */
+
+        function initLogos() {
+
+            document
+                .querySelectorAll(".kimo-logo-img")
+                .forEach(img => {
+                    img.src = "icon.png";
+                });
+
+        }
+
+        /* =====================================================
+           MESSAGE UI
+        ===================================================== */
+
+        function addUserMessage(text) {
+
+            const row =
+                document.createElement("div");
+
+            row.className = "message-row";
+
+            row.innerHTML = `
+                <div class="avatar user">
+                    <i
+                        data-lucide="user"
+                        style="width:18px;height:18px;"
+                    ></i>
+                </div>
+
+                <div class="message-content"></div>
+            `;
+
+            row.querySelector(
+                ".message-content"
+            ).textContent = text;
+
+            $("chatBox").appendChild(row);
+
+            lucide.createIcons();
+
+            scrollChat();
+
+        }
+
+        function createBotMessage(initialText = "") {
+
+            const row =
+                document.createElement("div");
+
+            row.className = "message-row";
+
+            row.innerHTML = `
+                <div class="avatar bot">
+                    <img
+                        src="icon.png"
+                        class="kimo-logo-img avatar-img"
+                        alt="Kimo"
+                    >
+                </div>
+
+                <div class="message-content"></div>
+            `;
+
+            const content =
+                row.querySelector(
+                    ".message-content"
+                );
+
+            content.innerHTML =
+                marked.parse(initialText);
+
+            $("chatBox").appendChild(row);
+
+            lucide.createIcons();
+
+            scrollChat();
+
+            return content;
+
+        }
+
+        /* =====================================================
+           ENVIRONMENT
+        ===================================================== */
 
         function checkEnvironment() {
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (window.innerWidth <= 768);
-            const isWebView = /wv|Android.*Version\/[0-9]\.[0-9]/i.test(ua) || (window.Android !== undefined);
+
+            const ua =
+                navigator.userAgent ||
+                navigator.vendor ||
+                window.opera;
+
+            const isMobile =
+                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+                .test(ua)
+                ||
+                window.innerWidth <= 768;
+
+            const isWebView =
+                /wv|Android.*Version\/[0-9]\.[0-9]/i
+                .test(ua)
+                ||
+                window.Android !== undefined;
+
+            /*
+             * Em desenvolvimento, se não quiseres bloquear desktop,
+             * podes comentar o bloco abaixo.
+             */
 
             if (!isMobile || !isWebView) {
-                document.getElementById('pcBlockOverlay').style.display = 'flex';
-                document.body.style.overflow = 'hidden';
+
+                $("pcBlockOverlay")
+                    .style
+                    .display = "flex";
+
+                document.body.style.overflow =
+                    "hidden";
+
             }
+
         }
+
+        /* =====================================================
+           PERMISSIONS
+        ===================================================== */
 
         function checkPermissions() {
-            const granted = localStorage.getItem('kimo_android_perms_granted');
+
+            const granted =
+                localStorage.getItem(
+                    "kimo_android_perms_granted"
+                );
+
             if (!granted) {
-                document.getElementById('permissionOverlay').style.display = 'flex';
+
+                $("permissionOverlay")
+                    .style
+                    .display = "flex";
+
             } else {
+
                 updatePermissionUIStates(true);
+
             }
+
         }
 
-        async function requestAndroidPermissions() {
-            localStorage.setItem('kimo_android_perms_granted', 'true');
+        function requestAndroidPermissions() {
+
+            /*
+             * Aqui não estamos a pedir uma permissão Android nativa.
+             * O selector de ficheiros do sistema trata do acesso
+             * ao documento escolhido.
+             */
+
+            localStorage.setItem(
+                "kimo_android_perms_granted",
+                "true"
+            );
+
             updatePermissionUIStates(true);
-            document.getElementById('permissionOverlay').style.display = 'none';
+
+            $("permissionOverlay")
+                .style
+                .display = "none";
+
         }
 
         function updatePermissionUIStates(isGranted) {
-            const storageStatus = document.getElementById('permStorageStatus');
-            if (isGranted && storageStatus) {
-                storageStatus.textContent = "Disponível (SAF)";
-                storageStatus.style.color = "var(--success)";
+
+            const storage =
+                $("permStorageStatus");
+
+            if (isGranted && storage) {
+
+                storage.textContent =
+                    "Disponível (SAF)";
+
+                storage.style.color =
+                    "var(--success)";
+
             }
+
         }
 
-        // Lê e valida o ficheiro .gguf com fallback seguro para Android
-        function handleGGUFFileSelect(event) {
-            const file = event.target.files[0];
-            const errorMsg = document.getElementById('ggufErrorMsg');
-            const statusInfo = document.getElementById('ggufStatusInfo');
-            const addBtn = document.getElementById('addGgufBtn');
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
 
-            if (file || event.target.value) {
-                let fileName = file ? file.name : "";
-                if (!fileName || fileName === "") {
-                    const fullPath = event.target.value;
-                    fileName = fullPath.substring(fullPath.lastIndexOf('\\') + 1).substring(fullPath.lastIndexOf('/') + 1);
-                }
+        window.toggleSidebar = function () {
 
-                if (fileName.toLowerCase().endsWith('.gguf')) {
-                    errorMsg.style.display = 'none';
-                    pendingFileObj = { name: fileName };
-                    statusInfo.innerHTML = `Detectado: <b>${fileName}</b>`;
-                    addBtn.style.display = 'flex';
-                } else {
-                    errorMsg.style.display = 'block';
-                    statusInfo.textContent = "❌ Erro: O ficheiro precisa de terminar em .gguf!";
-                    addBtn.style.display = 'none';
-                    pendingFileObj = null;
-                    event.target.value = ""; 
-                }
-            }
-        }
+            $("sidebar")
+                .classList
+                .toggle("open");
 
-        // Botão Adicionar: Guarda o nome do modelo e notifica no chat
-        function addSelectedGgufModel() {
-            if (!pendingFileObj) return;
-
-            const modelName = pendingFileObj.name;
-            localStorage.setItem('kimo_selected_gguf_name', modelName);
-            
-            document.getElementById('ggufStatusInfo').innerHTML = `✅ Ativo: <b>${modelName}</b>`;
-            document.getElementById('addGgufBtn').style.display = 'none';
-            
-            updateModelDropdownOptions();
-            closeModal('settingsModal');
-
-            const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += `
-                <div class="message-row">
-                    <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
-                    <div class="message-content">Modelo <b>${modelName}</b> adicionado com sucesso na versão **1.1.5**! Já podes começar a interagir.</div>
-                </div>`;
-            lucide.createIcons();
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function updateModelDropdownOptions() {
-            const select = document.getElementById('modelSelect');
-            select.innerHTML = '';
-            const savedGguf = localStorage.getItem('kimo_selected_gguf_name');
-
-            if (savedGguf) {
-                const opt = document.createElement('option');
-                opt.value = savedGguf;
-                opt.textContent = `[GGUF] ${savedGguf}`;
-                select.appendChild(opt);
-            } else {
-                const opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "Nenhum modelo .gguf carregado";
-                select.appendChild(opt);
-            }
-        }
-
-        window.onload = () => {
-            checkEnvironment();
-            checkPermissions();
-            document.getElementById('initialBotMsg').innerHTML = marked.parse("Olá! O **Kimo AI v1.1.5** está pronto. Seleciona o teu modelo `.gguf` nas **Configurações** e clica em **Adicionar** para começar!");
-            loadSettings();
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; closeSidebar(); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function saveSettings() { closeModal('settingsModal'); }
+        window.closeSidebar = function () {
+
+            $("sidebar")
+                .classList
+                .remove("open");
+
+        };
+
+        /* =====================================================
+           MODALS
+        ===================================================== */
+
+        window.openModal = function (id) {
+
+            const el = $(id);
+
+            if (!el) return;
+
+            el.style.display = "flex";
+
+            window.closeSidebar();
+
+        };
+
+        window.closeModal = function (id) {
+
+            const el = $(id);
+
+            if (!el) return;
+
+            el.style.display = "none";
+
+        };
+
+        window.saveSettings = function () {
+
+            const provider =
+                $("llmProvider").value;
+
+            localStorage.setItem(
+                "kimo_llm_provider",
+                provider
+            );
+
+            window.closeModal("settingsModal");
+
+        };
+
+        /* =====================================================
+           FILE SELECTION
+        ===================================================== */
+
+        window.handleGGUFFileSelect =
+            function handleGGUFFileSelect(event) {
+
+                const file =
+                    event.target.files?.[0];
+
+                const error =
+                    $("ggufErrorMsg");
+
+                const status =
+                    $("ggufStatusInfo");
+
+                const add =
+                    $("addGgufBtn");
+
+                if (!file) {
+
+                    pendingFile = null;
+
+                    error.style.display =
+                        "none";
+
+                    add.style.display =
+                        "none";
+
+                    status.textContent =
+                        "Nenhum ficheiro selecionado";
+
+                    return;
+
+                }
+
+                const filename =
+                    file.name || "";
+
+                if (
+                    !filename
+                        .toLowerCase()
+                        .endsWith(".gguf")
+                ) {
+
+                    pendingFile = null;
+
+                    error.style.display =
+                        "block";
+
+                    add.style.display =
+                        "none";
+
+                    status.textContent =
+                        "❌ Ficheiro inválido.";
+
+                    event.target.value = "";
+
+                    return;
+
+                }
+
+                /*
+                 * AQUI está a diferença crítica:
+                 *
+                 * pendingFile = file
+                 *
+                 * Não guardamos só o nome.
+                 * Precisamos do File real para passar o GGUF
+                 * para o runtime.
+                 */
+
+                pendingFile = file;
+
+                const mb =
+                    (
+                        file.size /
+                        1024 /
+                        1024
+                    ).toFixed(1);
+
+                error.style.display =
+                    "none";
+
+                status.innerHTML = `
+                    <b>Detectado:</b> ${escapeHtml(filename)}
+                    <br>
+                    <span style="color:var(--text-secondary)">
+                        Tamanho: ${mb} MB
+                    </span>
+                `;
+
+                add.style.display =
+                    "flex";
+
+            };
+
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
+
+        function showProgress(show) {
+
+            $("progressBox")
+                .style
+                .display =
+                show
+                    ? "flex"
+                    : "none";
+
+        }
+
+        function setProgress(percent, text) {
+
+            const safe =
+                Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        Number(percent) || 0
+                    )
+                );
+
+            $("progressBar")
+                .style
+                .width =
+                `${safe}%`;
+
+            $("progressPercent")
+                .textContent =
+                `${Math.round(safe)}%`;
+
+            $("progressText")
+                .textContent =
+                text || "A carregar...";
+
+        }
+
+        /* =====================================================
+           CREATE RUNTIME
+        ===================================================== */
+
+        async function createRuntime() {
+
+            setRuntimeStatus(
+                "Runtime: a iniciar..."
+            );
+
+            /*
+             * O Wllama pode usar CPU e/ou aceleração
+             * dependendo do ambiente.
+             */
+
+            wllama =
+                new Wllama(WLLAMA_CONFIG);
+
+            setRuntimeStatus(
+                "Runtime: pronto"
+            );
+
+            return wllama;
+
+        }
+
+        /* =====================================================
+           LOAD GGUF
+        ===================================================== */
+
+        window.addSelectedGgufModel =
+            async function addSelectedGgufModel() {
+
+                if (!pendingFile) {
+
+                    addBotSystemMessage(
+                        "⚠️ Seleciona um ficheiro `.gguf` primeiro."
+                    );
+
+                    return;
+
+                }
+
+                const file =
+                    pendingFile;
+
+                const btn =
+                    $("addGgufBtn");
+
+                btn.disabled =
+                    true;
+
+                showProgress(true);
+
+                setProgress(
+                    5,
+                    "A preparar runtime..."
+                );
+
+                setRuntimeStatus(
+                    "Runtime: a carregar modelo..."
+                );
+
+                try {
+
+                    if (!wllama) {
+                        await createRuntime();
+                    }
+
+                    setProgress(
+                        15,
+                        "A carregar o ficheiro GGUF..."
+                    );
+
+                    /*
+                     * Carregamento REAL do GGUF.
+                     *
+                     * O File é enviado para o runtime.
+                     */
+
+                    await wllama.loadModel(
+                        [file],
+                        {
+                            n_ctx: 4096,
+
+                            /*
+                             * CPU:
+                             * 0
+                             *
+                             * Em ambientes compatíveis podes testar
+                             * mais tarde valores superiores.
+                             */
+                            n_gpu_layers: 0
+                        }
+                    );
+
+                    setProgress(
+                        100,
+                        "Modelo carregado."
+                    );
+
+                    loadedModelName =
+                        file.name;
+
+                    localStorage.setItem(
+                        "kimo_selected_gguf_name",
+                        file.name
+                    );
+
+                    localStorage.setItem(
+                        "kimo_model_loaded",
+                        "true"
+                    );
+
+                    updateModelDropdownOptions();
+
+                    $("ggufStatusInfo")
+                        .innerHTML = `
+                            <span style="color:var(--success)">
+                                ✅ Modelo ativo:
+                            </span>
+                            <b>${escapeHtml(file.name)}</b>
+                        `;
+
+                    setRuntimeStatus(
+                        "Runtime: modelo ativo"
+                    );
+
+                    window.closeModal(
+                        "settingsModal"
+                    );
+
+                    addBotSystemMessage(
+                        `✅ **${file.name}** foi carregado com sucesso.\n\nAgora manda uma mensagem.`
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Erro ao carregar GGUF:",
+                        error
+                    );
+
+                    loadedModelName =
+                        null;
+
+                    localStorage.removeItem(
+                        "kimo_model_loaded"
+                    );
+
+                    setRuntimeStatus(
+                        "Runtime: erro"
+                    );
+
+                    setProgress(
+                        0,
+                        "Erro ao carregar."
+                    );
+
+                    $("ggufStatusInfo")
+                        .innerHTML = `
+                            <span style="color:var(--error)">
+                                ❌ Falha ao carregar o GGUF.
+                            </span>
+                            <br>
+                            <small>
+                                ${escapeHtml(
+                                    error?.message ||
+                                    String(error)
+                                )}
+                            </small>
+                        `;
+
+                    addBotSystemMessage(
+                        `❌ **Erro ao carregar o modelo.**\n\n\`${error?.message || error}\``
+                    );
+
+                } finally {
+
+                    btn.disabled =
+                        false;
+
+                }
+
+            };
+
+        /* =====================================================
+           BOT MESSAGE
+        ===================================================== */
+
+        function addBotSystemMessage(text) {
+
+            createBotMessage(text);
+
+        }
+
+        /* =====================================================
+           MODEL DROPDOWN
+        ===================================================== */
+
+        function updateModelDropdownOptions() {
+
+            const select =
+                $("modelSelect");
+
+            select.innerHTML = "";
+
+            if (loadedModelName) {
+
+                const option =
+                    document.createElement("option");
+
+                option.value =
+                    loadedModelName;
+
+                option.textContent =
+                    `[GGUF] ${loadedModelName}`;
+
+                select.appendChild(option);
+
+                return;
+
+            }
+
+            const saved =
+                localStorage.getItem(
+                    "kimo_selected_gguf_name"
+                );
+
+            if (saved) {
+
+                const option =
+                    document.createElement("option");
+
+                option.value = "";
+
+                option.textContent =
+                    `[Selecionar novamente] ${saved}`;
+
+                select.appendChild(option);
+
+                return;
+
+            }
+
+            const option =
+                document.createElement("option");
+
+            option.value =
+                "";
+
+            option.textContent =
+                "Nenhum modelo .gguf carregado";
+
+            select.appendChild(option);
+
+        }
+
+        /* =====================================================
+           SEND MESSAGE
+        ===================================================== */
+
+        window.sendMessage =
+            async function sendMessage() {
+
+                const input =
+                    $("userInput");
+
+                const text =
+                    input.value.trim();
+
+                if (!text) {
+                    return;
+                }
+
+                if (isGenerating) {
+                    return;
+                }
+
+                addUserMessage(text);
+
+                input.value = "";
+
+                /*
+                 * O nome salvo no LocalStorage não basta.
+                 * O modelo TEM de estar em memória no runtime.
+                 */
+
+                if (!wllama || !loadedModelName) {
+
+                    addBotSystemMessage(
+                        "⚠️ Nenhum modelo `.gguf` está carregado nesta sessão.\n\nVai a **Configurações → Selecionar Ficheiro .gguf → Carregar Modelo**."
+                    );
+
+                    return;
+
+                }
+
+                isGenerating =
+                    true;
+
+                $("sendBtn").disabled =
+                    true;
+
+                const botContent =
+                    createBotMessage(
+                        "⏳ A pensar..."
+                    );
+
+                let fullResponse =
+                    "";
+
+                try {
+
+                    chatHistory.push({
+                        role: "user",
+                        content: text
+                    });
+
+                    /*
+                     * Mantemos um histórico limitado para não
+                     * explodir o contexto.
+                     */
+
+                    const recentHistory =
+                        chatHistory.slice(-10);
+
+                    const messages = [
+                        {
+                            role: "system",
+                            content:
+                                "Tu és o Kimo AI. Responde em português. Sê claro, útil e direto."
+                        },
+                        ...recentHistory
+                    ];
+
+                    botContent.innerHTML =
+                        marked.parse(
+                            "⏳ A pensar..."
+                        );
+
+                    /*
+                     * Geração real.
+                     */
+
+                    const response =
+                        await wllama.createChatCompletion(
+                            {
+                                messages,
+
+                                max_tokens: 512,
+
+                                temperature: 0.7,
+
+                                top_k: 40,
+
+                                top_p: 0.9,
+
+                                stream: true
+                            }
+                        );
+
+                    botContent.innerHTML =
+                        "";
+
+                    /*
+                     * Streaming.
+                     */
+
+                    if (
+                        response &&
+                        response[
+                            Symbol.asyncIterator
+                        ]
+                    ) {
+
+                        for await (
+                            const chunk
+                            of response
+                        ) {
+
+                            let piece =
+                                "";
+
+                            /*
+                             * Formato OpenAI-like.
+                             */
+
+                            if (
+                                chunk
+                                    ?.choices
+                                    ?.[0]
+                                    ?.delta
+                                    ?.content
+                            ) {
+
+                                piece =
+                                    chunk
+                                        .choices[0]
+                                        .delta
+                                        .content;
+
+                            }
+
+                            /*
+                             * Fallback.
+                             */
+
+                            else if (
+                                chunk
+                                    ?.choices
+                                    ?.[0]
+                                    ?.message
+                                    ?.content
+                            ) {
+
+                                piece =
+                                    chunk
+                                        .choices[0]
+                                        .message
+                                        .content;
+
+                            }
+
+                            /*
+                             * Alguns runtimes podem devolver
+                             * texto diretamente.
+                             */
+
+                            else if (
+                                typeof chunk ===
+                                "string"
+                            ) {
+
+                                piece =
+                                    chunk;
+
+                            }
+
+                            if (piece) {
+
+                                fullResponse +=
+                                    piece;
+
+                                botContent.innerHTML =
+                                    marked.parse(
+                                        fullResponse
+                                    );
+
+                                scrollChat();
+
+                            }
+
+                        }
+
+                    } else {
+
+                        /*
+                         * Fallback para resposta completa.
+                         */
+
+                        fullResponse =
+                            response
+                                ?.choices
+                                ?.[0]
+                                ?.message
+                                ?.content ||
+                            response
+                                ?.choices
+                                ?.[0]
+                                ?.text ||
+                            "";
+
+                        botContent.innerHTML =
+                            marked.parse(
+                                fullResponse ||
+                                "O modelo não retornou texto."
+                            );
+
+                    }
+
+                    if (!fullResponse.trim()) {
+
+                        fullResponse =
+                            "O modelo terminou sem gerar texto.";
+
+                        botContent.innerHTML =
+                            marked.parse(
+                                fullResponse
+                            );
+
+                    }
+
+                    chatHistory.push({
+                        role: "assistant",
+                        content: fullResponse
+                    });
+
+                } catch (error) {
+
+                    console.error(
+                        "Erro de inferência:",
+                        error
+                    );
+
+                    botContent.innerHTML =
+                        marked.parse(
+                            `❌ **Erro ao gerar resposta.**\n\n\`${error?.message || error}\``
+                        );
+
+                } finally {
+
+                    isGenerating =
+                        false;
+
+                    $("sendBtn").disabled =
+                        false;
+
+                    lucide.createIcons();
+
+                    scrollChat();
+
+                }
+
+            };
+
+        /* =====================================================
+           CLEAR CHAT
+        ===================================================== */
+
+        window.limparChat =
+            function limparChat() {
+
+                chatHistory.length = 0;
+
+                $("chatBox").innerHTML = "";
+
+                addBotSystemMessage(
+                    "Conversa limpa com sucesso!"
+                );
+
+                window.closeSidebar();
+
+            };
+
+        /* =====================================================
+           LOAD SETTINGS
+        ===================================================== */
 
         function loadSettings() {
-            const savedGgufName = localStorage.getItem('kimo_selected_gguf_name');
-            if (savedGgufName) {
-                document.getElementById('ggufStatusInfo').innerHTML = `Atual ativo: <b>${savedGgufName}</b>`;
+
+            const savedProvider =
+                localStorage.getItem(
+                    "kimo_llm_provider"
+                );
+
+            if (savedProvider) {
+
+                $("llmProvider").value =
+                    savedProvider;
+
             }
+
+            const savedModel =
+                localStorage.getItem(
+                    "kimo_selected_gguf_name"
+                );
+
+            if (savedModel) {
+
+                $("ggufStatusInfo")
+                    .innerHTML = `
+                        Último modelo selecionado:
+                        <b>${escapeHtml(savedModel)}</b>
+                        <br>
+                        <small>
+                            Seleciona novamente o ficheiro
+                            para carregá-lo nesta sessão.
+                        </small>
+                    `;
+
+            }
+
             updateModelDropdownOptions();
+
         }
 
-        function limparChat() {
-            document.getElementById('chatBox').innerHTML = `
-                <div class="message-row">
-                    <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
-                    <div class="message-content">Conversa limpa com sucesso!</div>
-                </div>`;
-            lucide.createIcons();
-            closeSidebar();
-        }
+        /* =====================================================
+           KEYBOARD
+        ===================================================== */
 
-        async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if (!text) return;
+        $("userInput")
+            .addEventListener(
+                "keydown",
+                event => {
 
-            input.value = "";
-            const chatBox = document.getElementById('chatBox');
-            
-            chatBox.innerHTML += `
-                <div class="message-row">
-                    <div class="avatar user"><i data-lucide="user" style="width: 18px; height: 18px;"></i></div>
-                    <div class="message-content">${text}</div>
-                </div>`;
-            
-            const modelName = localStorage.getItem('kimo_selected_gguf_name');
-            if (!modelName) {
-                chatBox.innerHTML += `
-                    <div class="message-row">
-                        <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
-                        <div class="message-content">⚠️ Nenhum modelo <b>.gguf</b> ativo. Vai a Configurações, escolhe o ficheiro e clica em <b>Adicionar</b>.</div>
-                    </div>`;
+                    if (
+                        event.key ===
+                        "Enter"
+                    ) {
+
+                        event.preventDefault();
+
+                        window.sendMessage();
+
+                    }
+
+                }
+            );
+
+        /* =====================================================
+           BOOT
+        ===================================================== */
+
+        window.addEventListener(
+            "load",
+            async () => {
+
+                initLogos();
+
                 lucide.createIcons();
-                return;
-            }
 
-            chatBox.innerHTML += `
-                <div class="message-row">
-                    <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
-                    <div class="message-content">*(A processar localmente com o modelo: <b>${modelName}</b>...)*</div>
-                </div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-            lucide.createIcons();
-        }
+                checkEnvironment();
+
+                checkPermissions();
+
+                $("initialBotMsg")
+                    .innerHTML =
+                    marked.parse(
+                        "Olá! O **Kimo AI** está pronto. Vai a **Configurações** e carrega um modelo `.gguf` para começar."
+                    );
+
+                loadSettings();
+
+                setRuntimeStatus(
+                    "Runtime: aguardando modelo"
+                );
+
+            }
+        );
+
     </script>
+
 </body>
 </html>
