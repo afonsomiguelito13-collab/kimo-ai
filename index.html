@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kimo AI</title>
-    <!-- Marked.js para renderização de Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
@@ -12,7 +11,6 @@
             --bg-sidebar: #171717;
             --bg-input: #2f2f2f;
             --bg-hover: #2f2f2f;
-            --bg-table-alt: #282828;
             --text-primary: #ececec;
             --text-secondary: #b4b4b4;
             --accent: #10a37f;
@@ -44,18 +42,14 @@
             stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
-            display: inline-block;
-            vertical-align: middle;
         }
 
         /* --- Overlay de Bloqueio PC / Navegador --- */
         #pcBlockOverlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
             background-color: #171717;
             color: #ececec;
             z-index: 99999;
@@ -66,7 +60,34 @@
             padding: 24px;
         }
 
-        /* --- Sidebar --- */
+        /* --- Modal de Pedido de Permissão --- */
+        #permissionOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 99998;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .permission-card {
+            background-color: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* --- Sidebar & Layout --- */
         .sidebar {
             width: 260px;
             background-color: var(--bg-sidebar);
@@ -83,36 +104,7 @@
             justify-content: space-between;
             font-size: 18px;
             font-weight: 700;
-            color: var(--text-primary);
             border-bottom: 1px solid var(--border);
-        }
-
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sidebar-brand .icon {
-            color: var(--accent);
-            width: 22px;
-            height: 22px;
-        }
-
-        .close-sidebar-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            border-radius: 6px;
-        }
-
-        .close-sidebar-btn:hover {
-            background-color: var(--bg-hover);
-            color: var(--text-primary);
         }
 
         .nav-menu {
@@ -121,7 +113,6 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-            overflow-y: auto;
         }
 
         .nav-btn {
@@ -135,33 +126,14 @@
             gap: 12px;
             font-size: 14px;
             cursor: pointer;
-            transition: background 0.2s;
-            text-align: left;
         }
 
-        .nav-btn:hover {
-            background-color: var(--bg-hover);
-        }
+        .nav-btn:hover { background-color: var(--bg-hover); }
 
-        .nav-btn .icon {
-            color: var(--text-secondary);
-        }
-        
-        .btn-exit {
-            color: #f87171;
-            margin-top: auto;
-        }
-        
-        .btn-exit .icon {
-            color: #f87171;
-        }
-
-        /* --- Main Content --- */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            position: relative;
             width: 100%;
         }
 
@@ -180,32 +152,20 @@
             border: none;
             color: var(--text-primary);
             cursor: pointer;
-            padding: 8px;
-        }
-
-        .model-selector {
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         select {
             background-color: transparent;
             color: var(--text-primary);
             border: none;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             outline: none;
-            cursor: pointer;
             max-width: 200px;
         }
-        
-        select option {
-            background-color: var(--bg-input);
-            color: var(--text-primary);
-        }
 
-        /* --- Chat Area & Markdown --- */
+        select option { background-color: var(--bg-input); }
+
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -213,7 +173,6 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            scroll-behavior: smooth;
         }
 
         .message-row {
@@ -226,8 +185,7 @@
         }
 
         .avatar {
-            width: 32px;
-            height: 32px;
+            width: 32px; height: 32px;
             border-radius: 6px;
             display: flex;
             align-items: center;
@@ -235,35 +193,16 @@
             flex-shrink: 0;
         }
 
-        .avatar.bot { background-color: var(--accent); color: white; }
-        .avatar.user { background-color: var(--bg-input); color: white; }
-
-        .avatar .icon {
-            width: 20px;
-            height: 20px;
-        }
+        .avatar.bot { background-color: var(--accent); }
+        .avatar.user { background-color: var(--bg-input); }
 
         .message-content {
             font-size: 15px;
             line-height: 1.6;
-            color: var(--text-primary);
             flex: 1;
             word-break: break-word;
-            padding-top: 4px;
-            overflow-x: auto;
         }
 
-        .message-content strong { font-weight: 700; color: white; }
-        .message-content code:not(pre code) {
-            font-family: monospace;
-            color: var(--accent);
-            background-color: rgba(16, 163, 127, 0.15);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-
-        /* --- Bloco de Código Separado com Botão Copiar --- */
         .code-block-container {
             margin: 14px 0;
             border-radius: 8px;
@@ -278,56 +217,11 @@
             align-items: center;
             background-color: #1a1a1a;
             padding: 6px 12px;
-            border-bottom: 1px solid var(--border);
         }
 
-        .code-language {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-family: monospace;
-            letter-spacing: 0.5px;
-        }
+        .code-block-container pre { padding: 12px; overflow-x: auto; }
+        .code-block-container code { font-family: monospace; color: #e2e8f0; }
 
-        .copy-code-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .copy-code-btn:hover {
-            background-color: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .code-block-container pre {
-            margin: 0 !important;
-            border: none !important;
-            border-radius: 0 !important;
-            padding: 12px;
-            overflow-x: auto;
-            background-color: #0d0d0d;
-        }
-
-        .code-block-container pre code {
-            font-family: 'Consolas', 'Courier New', monospace;
-            color: #e2e8f0;
-            background: transparent !important;
-            padding: 0 !important;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        /* --- Input Area --- */
         .input-area {
             padding: 20px;
             background: linear-gradient(180deg, transparent, var(--bg-main) 20%);
@@ -343,11 +237,6 @@
             border-radius: 24px;
             padding: 8px 16px;
             border: 1px solid var(--border);
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-
-        .input-box:focus-within {
-            border-color: var(--text-secondary);
         }
 
         .input-box input {
@@ -363,33 +252,22 @@
         .send-btn {
             position: absolute;
             right: 12px;
-            bottom: 10px;
             background-color: var(--text-primary);
             color: var(--bg-main);
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 32px; height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .send-btn:disabled {
-            background-color: var(--bg-input);
-            color: var(--text-secondary);
-            cursor: not-allowed;
-        }
-
-        /* --- Modals --- */
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(2px);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -409,16 +287,6 @@
             position: relative;
         }
 
-        .close-modal {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
-
         .modal-input {
             width: 100%;
             padding: 10px 12px;
@@ -427,7 +295,6 @@
             border: 1px solid var(--border);
             color: var(--text-primary);
             outline: none;
-            font-size: 14px;
         }
 
         .btn-primary {
@@ -438,67 +305,46 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: background 0.2s;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
         }
 
         @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                height: 100%;
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .menu-toggle {
-                display: block;
-            }
+            .sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .menu-toggle { display: block; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Bloqueio para PC / Navegador Web -->
+    <!-- Bloqueio para PC / Navegador Normal -->
     <div id="pcBlockOverlay">
         <div style="font-size: 56px; margin-bottom: 16px;">📱</div>
-        <h2 style="margin-bottom: 12px; font-size: 22px;">Acesso Bloqueado</h2>
-        <p style="color: #b4b4b4; font-size: 16px; max-width: 320px; line-height: 1.5;">
+        <h2 style="margin-bottom: 12px;">Acesso Bloqueado</h2>
+        <p style="color: #b4b4b4; font-size: 16px; max-width: 320px;">
             Por favor mude pra versão de apk para continuar a usar o Kimo AI.
         </p>
+    </div>
+
+    <!-- Tela de Permissões -->
+    <div id="permissionOverlay">
+        <div class="permission-card">
+            <div style="font-size: 40px;">📂</div>
+            <h3>Permissão Necessária</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;">O Kimo AI precisa de acesso ao armazenamento para carregar o teu modelo <b>.gguf</b> local.</p>
+            <button class="btn-primary" onclick="requestAppPermissions()">Conceder Permissão</button>
+        </div>
     </div>
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-brand">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
-                KIMO AI
-            </div>
-            <button class="close-sidebar-btn" onclick="closeSidebar()" title="Voltar ao Chat">
-                <svg class="icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            </button>
+            <span>KIMO AI</span>
+            <button style="background:none; border:none; color:white;" onclick="closeSidebar()">✕</button>
         </div>
         <div class="nav-menu">
-            <button class="nav-btn" onclick="closeSidebar()">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Voltar ao Chat
-            </button>
-            <button class="nav-btn" onclick="openModal('settingsModal')">
-                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Configurações
-            </button>
-            <button class="nav-btn btn-exit" onclick="sairApp()">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Limpar Conversa
-            </button>
+            <button class="nav-btn" onclick="closeSidebar()">💬 Voltar ao Chat</button>
+            <button class="nav-btn" onclick="openModal('settingsModal')">⚙️ Configurações</button>
+            <button class="nav-btn" style="color:#f87171; margin-top:auto;" onclick="limparChat()">🗑️ Limpar Conversa</button>
         </div>
     </div>
 
@@ -506,36 +352,24 @@
     <div class="main-content">
         <div class="topbar">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="menu-toggle" onclick="toggleSidebar()">
-                    <svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                </button>
-                <div class="model-selector">
-                    <span style="color: var(--text-secondary); font-size: 14px;">Modelo:</span>
-                    <select id="modelSelect">
-                        <option value="">A carregar...</option>
-                    </select>
-                </div>
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <select id="modelSelect">
+                    <option value="">Nenhum modelo selecionado</option>
+                </select>
             </div>
-            <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--accent);"></div>
         </div>
 
-        <!-- Chat History -->
         <div class="chat-container" id="chatBox">
             <div class="message-row">
-                <div class="avatar bot">
-                    <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
-                </div>
+                <div class="avatar bot">🤖</div>
                 <div class="message-content" id="initialBotMsg"></div>
             </div>
         </div>
 
-        <!-- Input Area -->
         <div class="input-area">
             <div class="input-box">
-                <input type="text" id="userInput" placeholder="Pede um código em HTML, CSS, Lua, Luau..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                    <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
+                <input type="text" id="userInput" placeholder="Escreve uma mensagem..." onkeydown="if(event.key==='Enter') sendMessage()">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➔</button>
             </div>
         </div>
     </div>
@@ -543,22 +377,20 @@
     <!-- Modal Configurações -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
-            <button class="close-modal" onclick="closeModal('settingsModal')">✕</button>
             <h3>Configurações</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <label style="font-size: 14px; color: var(--text-secondary);">Provedor LLM</label>
-                <select class="modal-input" id="llmProvider" onchange="onProviderChange()">
+                <label style="font-size: 14px; color: var(--text-secondary);">Método LLM</label>
+                <select class="modal-input" id="llmProvider">
                     <option value="sem_ollama">Novo Método: Local GGUF (Sem Ollama)</option>
-                    <option value="ollama">Ollama (Local no Termux)</option>
+                    <option value="ollama">Ollama (Local Termux)</option>
                 </select>
 
-                <div id="semOllamaContainer" style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-sidebar); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-                    <label style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">Pasta Models / Ficheiro .gguf</label>
+                <div style="background: var(--bg-sidebar); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 13px; color: var(--text-secondary);">Carregar Modelo (.gguf)</label>
                     <input type="file" id="ggufFileInput" accept=".gguf" style="display:none;" onchange="handleGGUFFileSelect(event)">
-                    <button class="btn-primary" style="background-color: var(--bg-input); border: 1px solid var(--border);" onclick="document.getElementById('ggufFileInput').click()">
-                        📁 Carregar .gguf da pasta Models
-                    </button>
-                    <span id="ggufStatusInfo" style="font-size: 12px; color: var(--accent);">Nenhum ficheiro .gguf selecionado</span>
+                    <button class="btn-primary" style="background-color: var(--bg-input);" onclick="document.getElementById('ggufFileInput').click()">📁 Selecionar Ficheiro</button>
+                    <span id="ggufStatusInfo" style="font-size: 12px; color: var(--accent);">Nenhum ficheiro selecionado</span>
+                    <span id="ggufErrorMsg" style="font-size: 12px; color: var(--error); display: none;">❌ Erro: O ficheiro precisa de ter a extensão .gguf!</span>
                 </div>
             </div>
             <button class="btn-primary" onclick="saveSettings()">💾 Guardar</button>
@@ -566,103 +398,82 @@
     </div>
 
     <script>
-        // --- Lógica de Bloqueio para PC e Navegadores Normais ---
+        // Verificação do Ambiente (Mobile + WebView)
         function checkEnvironment() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (window.innerWidth <= 768);
-            
-            // Deteta se está a rodar dentro do APK (WebView Android)
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (window.innerWidth <= 768);
             const isWebView = /wv|Android.*Version\/[0-9]\.[0-9]/i.test(ua) || (window.Android !== undefined);
 
-            // Bloqueia se for Computador/PC ou Navegador Tradicional
-            if (!isMobileDevice || !isWebView) {
+            if (!isMobile || !isWebView) {
                 document.getElementById('pcBlockOverlay').style.display = 'flex';
                 document.body.style.overflow = 'hidden';
             }
         }
 
-        // --- Renderização de Código e Markdown ---
-        const customRenderer = new marked.Renderer();
-        customRenderer.code = function(codeArg, langArg) {
-            const text = (typeof codeArg === 'object' && codeArg.text !== undefined) ? codeArg.text : codeArg;
-            const lang = (typeof codeArg === 'object' && codeArg.lang !== undefined) ? codeArg.lang : langArg;
-            const language = (lang || 'código').toUpperCase();
-
-            const escapedCode = text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-
-            return `
-                <div class="code-block-container">
-                    <div class="code-header">
-                        <span class="code-language">${language}</span>
-                        <button class="copy-code-btn" onclick="copyCode(this)">📋 Copiar</button>
-                    </div>
-                    <pre><code>${escapedCode}</code></pre>
-                </div>
-            `;
-        };
-        marked.use({ renderer: customRenderer });
-
-        function copyCode(btn) {
-            const container = btn.closest('.code-block-container');
-            const codeText = container.querySelector('code').innerText;
-            navigator.clipboard.writeText(codeText).then(() => {
-                btn.innerText = "✅ Copiado!";
-                setTimeout(() => { btn.innerText = "📋 Copiar"; }, 2000);
-            });
-        }
-
-        window.onload = () => {
-            checkEnvironment();
-            const welcomeText = "Olá! O **Kimo AI** está pronto. Pede código em **HTML**, **CSS**, **Lua**, **Luau**, ou seleciona o teu modelo `.gguf` no **Novo Método**!";
-            document.getElementById('initialBotMsg').innerHTML = marked.parse(welcomeText);
-            loadSettings();
-        };
-
-        window.addEventListener('resize', checkEnvironment);
-
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; closeSidebar(); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function sairApp() {
-            if(confirm("Deseja limpar o histórico da conversa?")) {
-                document.getElementById('chatBox').innerHTML = `
-                    <div class="message-row">
-                        <div class="avatar bot"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg></div>
-                        <div class="message-content">Conversa limpa! O que vamos programar agora?</div>
-                    </div>`;
-                closeSidebar();
+        // Sistema de Pedido de Permissão
+        function checkPermissions() {
+            const granted = localStorage.getItem('kimo_perm_granted');
+            if (!granted) {
+                document.getElementById('permissionOverlay').style.display = 'flex';
             }
         }
 
+        function requestAppPermissions() {
+            localStorage.setItem('kimo_perm_granted', 'true');
+            document.getElementById('permissionOverlay').style.display = 'none';
+        }
+
+        // Validação estrita do Ficheiro .gguf (Ex: Qwen 1.5B)
         function handleGGUFFileSelect(event) {
             const file = event.target.files[0];
+            const errorMsg = document.getElementById('ggufErrorMsg');
+            const statusInfo = document.getElementById('ggufStatusInfo');
+
             if (file) {
-                localStorage.setItem('kimo_selected_gguf_name', file.name);
-                document.getElementById('ggufStatusInfo').textContent = `Carregado: ${file.name}`;
-                updateModelDropdownOptions();
+                // Valida se termina explicitamente em .gguf
+                if (file.name.toLowerCase().endsWith('.gguf')) {
+                    errorMsg.style.display = 'none';
+                    localStorage.setItem('kimo_selected_gguf_name', file.name);
+                    statusInfo.textContent = `Válido: ${file.name}`;
+                    updateModelDropdownOptions();
+                } else {
+                    errorMsg.style.display = 'block';
+                    statusInfo.textContent = "Ficheiro inválido";
+                    event.target.value = ""; 
+                }
             }
         }
 
         function updateModelDropdownOptions() {
             const select = document.getElementById('modelSelect');
             select.innerHTML = '';
-            const savedGguf = localStorage.getItem('kimo_selected_gguf_name') || 'Escolha um modelo .gguf';
-            const opt = document.createElement('option');
-            opt.value = savedGguf;
-            opt.textContent = `[GGUF] ${savedGguf}`;
-            select.appendChild(opt);
+            const savedGguf = localStorage.getItem('kimo_selected_gguf_name');
+
+            if (savedGguf) {
+                const opt = document.createElement('option');
+                opt.value = savedGguf;
+                opt.textContent = `[GGUF] ${savedGguf}`;
+                select.appendChild(opt);
+            } else {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "Nenhum modelo .gguf carregado";
+                select.appendChild(opt);
+            }
         }
 
-        function saveSettings() {
-            closeModal('settingsModal');
-        }
+        window.onload = () => {
+            checkEnvironment();
+            checkPermissions();
+            document.getElementById('initialBotMsg').innerHTML = marked.parse("Olá! O **Kimo AI** está pronto. Seleciona o teu modelo `.gguf` (ex: Qwen 1.5B) nas **Configurações** para começar!");
+            loadSettings();
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; closeSidebar(); }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function saveSettings() { closeModal('settingsModal'); }
 
         function loadSettings() {
             const savedGgufName = localStorage.getItem('kimo_selected_gguf_name');
@@ -672,59 +483,33 @@
             updateModelDropdownOptions();
         }
 
-        function appendMessage(text, isUser) {
-            const chatBox = document.getElementById('chatBox');
-            const row = document.createElement('div');
-            row.className = 'message-row';
-            const userIcon = `<svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-            const botIcon = `<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>`;
-            
-            row.innerHTML = `
-                <div class="avatar ${isUser ? 'user' : 'bot'}">${isUser ? userIcon : botIcon}</div>
-                <div class="message-content">${text}</div>
-            `;
-            chatBox.appendChild(row);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            return row.querySelector('.message-content');
+        function limparChat() {
+            document.getElementById('chatBox').innerHTML = `
+                <div class="message-row">
+                    <div class="avatar bot">🤖</div>
+                    <div class="message-content">Conversa limpa!</div>
+                </div>`;
+            closeSidebar();
         }
 
         async function sendMessage() {
             const input = document.getElementById('userInput');
-            const btn = document.getElementById('sendBtn');
             const text = input.value.trim();
-
             if (!text) return;
 
             input.value = "";
-            input.disabled = true;
-            btn.disabled = true;
-
-            appendMessage(text, true);
-            const botContentNode = appendMessage('...', false);
-
+            const chatBox = document.getElementById('chatBox');
+            
+            chatBox.innerHTML += `<div class="message-row"><div class="avatar user">👤</div><div class="message-content">${text}</div></div>`;
+            
             const modelName = localStorage.getItem('kimo_selected_gguf_name');
-            if (!modelName || modelName.includes('Escolha um modelo')) {
-                botContentNode.innerHTML = marked.parse("⚠️ **Modo GGUF Local**: Vá a **Configurações** e selecione o ficheiro `.gguf` que baixou.");
-                input.disabled = false;
-                btn.disabled = false;
+            if (!modelName) {
+                chatBox.innerHTML += `<div class="message-row"><div class="avatar bot">🤖</div><div class="message-content">⚠️ Nenhum modelo <b>.gguf</b> ativo. Vai a Configurações e escolhe um modelo como o Qwen 1.5B.</div></div>`;
                 return;
             }
 
-            let accumulatedText = `*(Modelo `.gguf` ativo: ${modelName})*\n\n`;
-            const chunks = [
-                "```luau\n-- Exemplo de Script Luau\nlocal Player = game.Players.LocalPlayer\nprint('Kimo AI rodando no APK!')\n```"
-            ];
-
-            for (const chunk of chunks) {
-                await new Promise(r => setTimeout(r, 200));
-                accumulatedText += chunk;
-                botContentNode.innerHTML = marked.parse(accumulatedText);
-                document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
-            }
-
-            input.disabled = false;
-            btn.disabled = false;
-            input.focus();
+            chatBox.innerHTML += `<div class="message-row"><div class="avatar bot">🤖</div><div class="message-content">*(A processar com o modelo local: <b>${modelName}</b>...)*</div></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
