@@ -1,2345 +1,1127 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#212121">
-    <title>Kimo AI v1.1.7</title>
-
-    <link rel="icon" type="image/png" href="icon.png">
-
-    <!-- Markdown -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <!-- Lucide -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Wllama -->
-    <script type="importmap">
-    {
-        "imports": {
-            "@wllama/wllama": "https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/index.js"
-        }
-    }
-    </script>
-
-    <style>
-        :root {
-            --bg-main: #212121;
-            --bg-sidebar: #171717;
-            --bg-input: #2f2f2f;
-            --bg-hover: #343434;
-            --text-primary: #ececec;
-            --text-secondary: #b4b4b4;
-            --accent: #10a37f;
-            --accent-hover: #1a7f64;
-            --border: #383838;
-            --error: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Helvetica,
-                Arial,
-                sans-serif;
-        }
-
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            display: flex;
-            overflow: hidden;
-        }
-
-        button,
-        input,
-        select {
-            font: inherit;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .kimo-logo-img {
-            border-radius: 8px;
-            object-fit: contain;
-        }
-
-        /* =========================================================
-           PC BLOCK
-        ========================================================= */
-
-        #pcBlockOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: #171717;
-            color: #ececec;
-            z-index: 99999;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 24px;
-        }
-
-        /* =========================================================
-           PERMISSION
-        ========================================================= */
-
-        #permissionOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.85);
-            z-index: 99998;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .permission-card {
-            width: 100%;
-            max-width: 380px;
-            background-color: var(--bg-sidebar);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 28px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .permission-list {
-            width: 100%;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: var(--bg-input);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-        }
-
-        .permission-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: var(--text-secondary);
-        }
-
-        /* =========================================================
-           SIDEBAR
-        ========================================================= */
-
-        .sidebar {
-            width: 260px;
-            height: 100%;
-            background-color: var(--bg-sidebar);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease;
-            z-index: 100;
-            flex-shrink: 0;
-        }
-
-        .sidebar-header {
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 18px;
-            font-weight: 700;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .nav-menu {
-            flex: 1;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            overflow-y: auto;
-        }
-
-        .nav-btn {
-            background: transparent;
-            color: var(--text-primary);
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-        }
-
-        .nav-btn:hover {
-            background-color: var(--bg-hover);
-        }
-
-        /* =========================================================
-           MAIN
-        ========================================================= */
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            width: calc(100% - 260px);
-            min-width: 0;
-            height: 100%;
-        }
-
-        .topbar {
-            height: 60px;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-
-        .model-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        select {
-            background-color: transparent;
-            color: var(--text-primary);
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            outline: none;
-            max-width: 320px;
-        }
-
-        select option {
-            background-color: var(--bg-input);
-            color: var(--text-primary);
-        }
-
-        /* =========================================================
-           CHAT
-        ========================================================= */
-
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            scroll-behavior: smooth;
-        }
-
-        .message-row {
-            display: flex;
-            gap: 16px;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 0 16px;
-        }
-
-        .avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .avatar.bot {
-            background-color: #000;
-        }
-
-        .avatar.user {
-            background-color: var(--bg-input);
-            color: white;
-        }
-
-        .avatar.bot img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .message-content {
-            font-size: 15px;
-            line-height: 1.6;
-            flex: 1;
-            word-break: break-word;
-            min-width: 0;
-        }
-
-        .message-content p {
-            margin-bottom: 10px;
-        }
-
-        .message-content p:last-child {
-            margin-bottom: 0;
-        }
-
-        .message-content pre {
-            overflow-x: auto;
-            background: #111;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            margin: 10px 0;
-        }
-
-        .message-content code {
-            background: rgba(255,255,255,0.06);
-            padding: 2px 5px;
-            border-radius: 5px;
-        }
-
-        .message-content pre code {
-            background: transparent;
-            padding: 0;
-        }
-
-        /* =========================================================
-           INPUT
-        ========================================================= */
-
-        .input-area {
-            padding: 20px;
-            background: linear-gradient(
-                180deg,
-                transparent,
-                var(--bg-main) 20%
-            );
-        }
-
-        .input-box {
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-            display: flex;
-            align-items: center;
-            background-color: var(--bg-input);
-            border-radius: 24px;
-            padding: 8px 16px;
-            border: 1px solid var(--border);
-        }
-
-        .input-box:focus-within {
-            border-color: #4b4b4b;
-        }
-
-        .input-box input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            font-size: 15px;
-            padding: 10px 50px 10px 0;
-            outline: none;
-            min-width: 0;
-        }
-
-        .input-box input::placeholder {
-            color: #858585;
-        }
-
-        .send-btn {
-            position: absolute;
-            right: 12px;
-            background-color: var(--text-primary);
-            color: var(--bg-main);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .send-btn:hover {
-            opacity: 0.9;
-        }
-
-        /* =========================================================
-           MODAL
-        ========================================================= */
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .modal {
-            background-color: var(--bg-main);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 480px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            position: relative;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
-        .modal-input {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            background-color: var(--bg-input);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            outline: none;
-        }
-
-        .btn-primary {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .btn-secondary {
-            background-color: var(--bg-input);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--bg-hover);
-        }
-
-        .status-box {
-            background: var(--bg-sidebar);
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            font-size: 12px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .progress-box {
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .progress-track {
-            width: 100%;
-            height: 8px;
-            background: #111;
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--accent);
-            transition: width 0.2s ease;
-        }
-
-        .small-note {
-            color: var(--text-secondary);
-            font-size: 11px;
-            line-height: 1.4;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                height: 100%;
-                transform: translateX(-100%);
-                box-shadow: 8px 0 30px rgba(0, 0, 0, 0.25);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .menu-toggle {
-                display: block;
-            }
-
-            .main-content {
-                width: 100%;
-            }
-
-            .message-row {
-                padding: 0 8px;
-            }
-
-            .input-area {
-                padding: 12px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kimo AI v2.1 — Chatbot Local GGUF</title>
+
+<!--
+  ===== WEBVIEW CHECKLIST (Android) =====
+  settings.javaScriptEnabled = true
+  settings.domStorageEnabled = true        (localStorage / OPFS)
+  settings.allowFileAccess = true          (para file:///android_asset)
+  - Multi-thread WASM (mais rápido) só ativa com headers COOP/COEP via https.
+    Em file:// funciona em single-thread (mais lento, mas funcional).
+  - Ollama local: iniciar com  OLLAMA_ORIGINS=* ollama serve
+  - Primeiro arranque precisa de internet (motor WASM + libs CDN).
+-->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<style>
+:root{
+  --bg-main:#212121; --bg-sidebar:#171717; --bg-input:#2f2f2f; --bg-hover:#2f2f2f;
+  --text-primary:#ececec; --text-secondary:#b4b4b4; --accent:#10a37f; --accent-hover:#1a7f64;
+  --border:#383838; --error:#ef4444; --success:#22c55e; --warning:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+html,body{height:100%}
+body{background:var(--bg-main);color:var(--text-primary);display:flex;height:100vh;height:100dvh;overflow:hidden}
+
+/* Layout */
+.sidebar{width:260px;background:var(--bg-sidebar);display:flex;flex-direction:column;z-index:100;border-right:1px solid var(--border);transition:transform .3s ease}
+.sidebar-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:700;border-bottom:1px solid var(--border)}
+.nav-menu{flex:1;padding:10px;display:flex;flex-direction:column;gap:5px;overflow-y:auto}
+.nav-btn{background:transparent;color:var(--text-primary);border:none;padding:12px;border-radius:8px;display:flex;align-items:center;gap:12px;font-size:14px;cursor:pointer;width:100%;text-align:left;transition:background .2s}
+.nav-btn:hover{background:var(--bg-hover)}
+.nav-btn.danger{color:var(--error);margin-top:auto}
+.nav-btn svg{width:18px;height:18px}
+
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0;height:100%}
+.topbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg-sidebar);gap:10px}
+.menu-toggle{display:none;background:none;border:none;color:var(--text-primary);cursor:pointer}
+.menu-toggle svg{width:20px;height:20px}
+select{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;font-weight:500;outline:none;max-width:220px}
+select option{background:var(--bg-input)}
+
+/* Chat */
+.chat-container{flex:1;overflow-y:auto;padding:20px 10px;display:flex;flex-direction:column;gap:24px;scroll-behavior:smooth}
+.message-row{display:flex;gap:16px;max-width:800px;margin:0 auto;width:100%;padding:0 16px}
+.avatar{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.avatar svg{width:18px;height:18px}
+.avatar.bot{background:var(--accent);color:#fff}
+.avatar.user{background:var(--bg-input);color:#fff}
+.message-content{font-size:15px;line-height:1.6;flex:1;word-break:break-word;min-width:0}
+.message-content p{margin-bottom:8px}
+.message-content pre{background:#1a1a1a;padding:12px;border-radius:0 0 6px 6px;overflow-x:auto;margin:0;border:1px solid var(--border)}
+.message-content code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.stream-status{color:var(--text-secondary);font-style:italic}
+.stats-line{font-size:11px;color:var(--text-secondary);margin-top:8px;opacity:.85}
+.think-box{border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.06);border-radius:8px;margin:6px 0;padding:8px 12px}
+.think-box summary{cursor:pointer;color:var(--warning);font-size:13px;font-weight:600;user-select:none}
+.think-box .think-text,.think-box .think-body{margin-top:8px;font-size:13.5px;color:var(--text-secondary)}
+.think-box .think-body p{margin-bottom:6px}
+
+/* Tabs de código */
+.msg-tabs-container{display:flex;flex-direction:column;width:100%;gap:8px}
+.msg-tab-buttons{display:flex;gap:8px;border-bottom:1px solid var(--border);padding-bottom:6px}
+.msg-tab-btn{background:none;border:none;color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:4px}
+.msg-tab-btn.active{color:var(--text-primary);background:var(--bg-input)}
+.msg-pane{display:none}.msg-pane.active{display:block}
+.code-block-wrapper{margin:8px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.code-header{display:flex;justify-content:space-between;align-items:center;background:#161616;padding:5px 8px;font-size:11px;color:var(--text-secondary)}
+.copy-code-btn{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer}
+.copy-code-btn:hover{background:var(--border)}
+
+/* Input */
+.input-area{padding:16px 20px;background:var(--bg-main);border-top:1px solid var(--border)}
+.input-box{max-width:800px;margin:0 auto;position:relative;display:flex;align-items:center;background:var(--bg-input);border-radius:24px;padding:8px 16px;border:1px solid var(--border)}
+.input-box textarea{flex:1;background:transparent;border:none;color:var(--text-primary);font-size:15px;padding:6px 44px 6px 0;outline:none;resize:none;max-height:140px;line-height:1.4}
+.input-actions{position:absolute;right:12px;display:flex;align-items:center;gap:6px}
+.action-btn{background:var(--text-primary);color:var(--bg-main);border:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .1s}
+.action-btn:hover{transform:scale(1.05)}
+.action-btn svg{width:15px;height:15px}
+.action-btn.stop{background:var(--error);color:#fff;display:none}
+
+/* Modais */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--bg-main);border:1px solid var(--border);border-radius:12px;width:100%;max-width:520px;padding:24px;display:flex;flex-direction:column;gap:16px;max-height:88vh;overflow-y:auto}
+.modal-head{display:flex;justify-content:space-between;align-items:center}
+.modal-head h3{font-size:16px}
+.icon-btn{background:none;border:none;color:var(--text-primary);cursor:pointer;display:flex}
+.icon-btn svg{width:20px;height:20px}
+.modal-input{width:100%;padding:10px 12px;border-radius:8px;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);outline:none;font-size:14px}
+textarea.modal-input{resize:vertical}
+.field label{font-size:12px;color:var(--text-secondary);display:block;margin-bottom:6px;font-weight:600}
+.panel{background:var(--bg-sidebar);padding:14px;border-radius:10px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.panel-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.panel-title svg{width:15px;height:15px;color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.muted{color:var(--text-secondary)}.small{font-size:12px}
+
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;transition:background .2s}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:disabled{background:var(--border);color:var(--text-secondary);cursor:not-allowed}
+.btn-primary svg{width:16px;height:16px}
+.btn-secondary{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border);padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn-secondary svg{width:16px;height:16px}
+.btn-secondary.danger{color:var(--error);border-color:rgba(239,68,68,.5)}
+.btn-secondary.shrink{width:auto!important;flex-shrink:0;padding:10px 12px}
+.btn-danger-mini{display:none;background:none;border:1px solid rgba(239,68,68,.5);color:var(--error);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;align-items:center;gap:4px}
+
+/* Catálogo / cache de modelos */
+.model-catalog{display:flex;flex-direction:column;gap:6px}
+.catalog-item{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.cat-name{font-size:13px;font-weight:600;word-break:break-all}
+.cat-size{font-size:11px;color:var(--text-secondary)}
+.chip-btn{background:rgba(16,163,127,.15);color:var(--accent);border:1px solid rgba(16,163,127,.4);width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.chip-btn:hover{background:rgba(16,163,127,.3)}
+.chip-btn.warn{color:var(--error);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+.chip-btn svg{width:16px;height:16px}
+
+/* Status */
+.status-badge{font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.status-badge svg{width:12px;height:12px}
+.status-badge.ready{background:rgba(34,197,94,.15);color:var(--success);border:1px solid rgba(34,197,94,.3)}
+.status-badge.loading{background:rgba(245,158,11,.15);color:var(--warning);border:1px solid rgba(245,158,11,.3)}
+.status-badge.idle{background:rgba(180,180,180,.15);color:var(--text-secondary);border:1px solid var(--border)}
+.progress-bar-container{width:100%;background:var(--bg-input);border-radius:4px;height:6px;overflow:hidden;display:none}
+.progress-bar-fill{width:0%;height:100%;background:var(--accent);transition:width .2s ease}
+
+@media (max-width:768px){
+  .sidebar{position:absolute;height:100%;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .menu-toggle{display:block}
+  select{max-width:140px}
+}
+</style>
 </head>
-
 <body>
 
-    <!-- =========================================================
-         PC BLOCK
-    ========================================================== -->
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i data-lucide="bot" style="color:var(--accent)"></i>
+      <span>KIMO AI <span style="font-size:11px;background:var(--bg-input);padding:2px 6px;border-radius:4px;color:var(--accent)">v2.1</span></span>
+    </div>
+    <button class="icon-btn" onclick="closeSidebar()"><i data-lucide="x"></i></button>
+  </div>
+  <div class="nav-menu">
+    <button class="nav-btn" onclick="closeSidebar()"><i data-lucide="message-square"></i> Voltar ao Chat</button>
+    <button class="nav-btn" onclick="openModal('settingsModal')"><i data-lucide="settings"></i> Configurações & Modelos</button>
+    <button class="nav-btn" onclick="openModal('changelogModal')"><i data-lucide="file-text"></i> Update Log (v2.1)</button>
+    <button class="nav-btn" onclick="openModal('policyModal')"><i data-lucide="shield"></i> Privacidade</button>
+    <button class="nav-btn danger" onclick="clearConversation()"><i data-lucide="trash-2"></i> Limpar Conversa</button>
+  </div>
+</div>
 
-    <div id="pcBlockOverlay">
-        <img
-            id="kimoLogoBlock"
-            class="kimo-logo-img"
-            style="width:72px;height:72px;margin-bottom:16px;"
-            alt="Kimo Logo"
-        >
+<!-- Main -->
+<div class="main-content">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <button class="menu-toggle" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <i data-lucide="cpu" style="width:16px;height:16px;color:var(--text-secondary)"></i>
+        <select id="modelSelect"><option value="">Nenhum modelo carregado</option></select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Raciocínio passo a passo (Qwen3, R1...)">
+        <span style="font-size:12px;color:var(--text-secondary)">Thinking</span>
+        <input type="checkbox" id="thinkingToggle" disabled style="cursor:pointer;accent-color:var(--accent)">
+      </label>
+      <div id="modelStatusBadge" class="status-badge idle"><i data-lucide="alert-circle"></i> Descarregado</div>
+    </div>
+  </div>
 
-        <h2 style="margin-bottom:12px;">
-            Acesso Bloqueado
-        </h2>
+  <div class="chat-container" id="chatBox">
+    <div class="message-row">
+      <div class="avatar bot"><i data-lucide="bot"></i></div>
+      <div class="message-content" id="initialBotMsg"></div>
+    </div>
+  </div>
 
-        <p style="color:#b4b4b4;font-size:16px;max-width:320px;">
-            Por favor use a versão APK/WebView do Kimo AI para carregar
-            modelos GGUF localmente.
-        </p>
+  <div class="input-area">
+    <div class="input-box">
+      <textarea id="userInput" rows="1" placeholder="Escreve uma mensagem..."></textarea>
+      <div class="input-actions">
+        <button class="action-btn stop" id="stopBtn" onclick="stopGeneration()" title="Parar geração"><i data-lucide="square" style="fill:currentColor"></i></button>
+        <button class="action-btn" id="sendBtn" title="Enviar" disabled><i data-lucide="send"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Configurações -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Configurações & Modelos GGUF</h3>
+      <button class="icon-btn" data-close="settingsModal"><i data-lucide="x"></i></button>
     </div>
 
-    <!-- =========================================================
-         PERMISSION
-    ========================================================== -->
-
-    <div id="permissionOverlay">
-        <div class="permission-card">
-
-            <img
-                id="kimoLogoPerm"
-                class="kimo-logo-img"
-                style="width:60px;height:60px;"
-                alt="Kimo Logo"
-            >
-
-            <h3>Permissões do Kimo AI</h3>
-
-            <p style="color:var(--text-secondary);font-size:13px;line-height:1.4;">
-                O Kimo AI usa o ficheiro GGUF selecionado por ti para
-                executar o modelo localmente no dispositivo.
-            </p>
-
-            <div class="permission-list">
-
-                <div class="permission-item">
-                    <span>INTERNET</span>
-                    <span style="color:var(--success);">
-                        ✓ Ativo
-                    </span>
-                </div>
-
-                <div class="permission-item">
-                    <span>STORAGE ACCESS</span>
-                    <span
-                        id="permStorageStatus"
-                        style="color:var(--success);"
-                    >
-                        Disponível (SAF)
-                    </span>
-                </div>
-
-            </div>
-
-            <button
-                class="btn-primary"
-                onclick="requestAndroidPermissions()"
-            >
-                <i
-                    data-lucide="check-circle"
-                    style="width:18px;height:18px;"
-                ></i>
-
-                Continuar
-            </button>
-        </div>
+    <div class="field">
+      <label>Runtime de Inferência</label>
+      <select class="modal-input" id="llmProvider">
+        <option value="wllama">Local GGUF (Wllama WASM — 100% no dispositivo)</option>
+        <option value="ollama">Ollama API (Localhost / Termux)</option>
+      </select>
     </div>
 
-    <!-- =========================================================
-         SIDEBAR
-    ========================================================== -->
+    <!-- Painel GGUF -->
+    <div id="ggufPanel" class="panel">
+      <div class="panel-title"><i data-lucide="download"></i> Descarregar modelo (.gguf)</div>
+      <div class="small muted">Recomendado p/ telemóvel: quantização Q4_K_M até ~1.5 GB. Fica guardado no aparelho (só descarregas uma vez).</div>
+      <div id="catalogList" class="model-catalog"></div>
 
-    <div class="sidebar" id="sidebar">
-
-        <div class="sidebar-header">
-
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-
-                <img
-                    id="kimoLogoNav"
-                    class="kimo-logo-img"
-                    style="width:26px;height:26px;"
-                    alt="Kimo Logo"
-                >
-
-                <span style="white-space:nowrap;">
-                    KIMO AI
-                    <span
-                        style="
-                            font-size:11px;
-                            background:var(--bg-input);
-                            padding:2px 6px;
-                            border-radius:4px;
-                            color:var(--accent);
-                        "
-                    >
-                        v1.1.7
-                    </span>
-                </span>
-
-            </div>
-
-            <button
-                style="
-                    background:none;
-                    border:none;
-                    color:white;
-                    cursor:pointer;
-                "
-                onclick="closeSidebar()"
-            >
-                <i
-                    data-lucide="x"
-                    style="width:20px;height:20px;"
-                ></i>
-            </button>
-
+      <div class="field">
+        <label>URL personalizado (HuggingFace, etc.)</label>
+        <div style="display:flex;gap:8px">
+          <input type="url" class="modal-input" id="modelUrlInput" placeholder="https://huggingface.co/.../modelo.gguf">
+          <button class="btn-secondary shrink" onclick="startDownloadFromInput()" title="Descarregar"><i data-lucide="download"></i></button>
         </div>
+      </div>
 
-        <div class="nav-menu">
+      <div class="progress-bar-container" id="downloadProgressContainer">
+        <div class="progress-bar-fill" id="downloadProgressBar"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span id="downloadProgressText" class="small muted"></span>
+        <button class="btn-danger-mini" id="cancelDownloadBtn" onclick="cancelDownload()">✕ Cancelar</button>
+      </div>
 
-            <button
-                class="nav-btn"
-                onclick="closeSidebar()"
-            >
-                <i
-                    data-lucide="message-square"
-                    style="width:18px;height:18px;"
-                ></i>
+      <div class="panel-title" style="margin-top:6px"><i data-lucide="folder-open"></i> Ficheiro local (sem guardar)</div>
+      <input type="file" id="ggufFileInput" accept=".gguf" style="display:none">
+      <button class="btn-secondary" onclick="document.getElementById('ggufFileInput').click()"><i data-lucide="folder-open"></i> Selecionar .gguf do dispositivo</button>
+      <div class="small muted" id="ggufFileInfo">Nenhum ficheiro selecionado</div>
 
-                Voltar ao Chat
-            </button>
+      <div class="panel-title" style="margin-top:6px"><i data-lucide="hard-drive"></i> Modelos guardados</div>
+      <div id="cachedList" class="model-catalog"></div>
 
-            <button
-                class="nav-btn"
-                onclick="openModal('settingsModal')"
-            >
-                <i
-                    data-lucide="settings"
-                    style="width:18px;height:18px;"
-                ></i>
+      <div class="progress-bar-container" id="modelProgressContainer">
+        <div class="progress-bar-fill" id="modelProgressBar"></div>
+      </div>
+      <span id="loadProgressText" class="small" style="color:var(--warning)"></span>
 
-                Configurações & Modelos
-            </button>
-
-            <button
-                class="nav-btn"
-                onclick="openModal('changelogModal')"
-            >
-                <i
-                    data-lucide="file-text"
-                    style="width:18px;height:18px;"
-                ></i>
-
-                Update Log
-            </button>
-
-            <button
-                class="nav-btn"
-                onclick="openModal('policyModal')"
-            >
-                <i
-                    data-lucide="shield"
-                    style="width:18px;height:18px;"
-                ></i>
-
-                Políticas de Privacidade
-            </button>
-
-            <button
-                class="nav-btn"
-                style="color:#f87171;margin-top:auto;"
-                onclick="limparChat()"
-            >
-                <i
-                    data-lucide="trash-2"
-                    style="width:18px;height:18px;"
-                ></i>
-
-                Limpar Conversa
-            </button>
-
-        </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" id="loadGgufBtn" disabled><i data-lucide="play"></i> Carregar na memória</button>
+        <button class="btn-secondary danger" id="unloadGgufBtn" style="display:none"><i data-lucide="eject"></i> Descarregar</button>
+      </div>
     </div>
 
-    <!-- =========================================================
-         MAIN CONTENT
-    ========================================================== -->
-
-    <div class="main-content">
-
-        <div class="topbar">
-
-            <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-
-                <button
-                    class="menu-toggle"
-                    onclick="toggleSidebar()"
-                >
-                    <i
-                        data-lucide="menu"
-                        style="width:20px;height:20px;"
-                    ></i>
-                </button>
-
-                <div class="model-header">
-
-                    <img
-                        id="kimoLogoTop"
-                        class="kimo-logo-img"
-                        style="width:22px;height:22px;"
-                        alt="Kimo Logo"
-                    >
-
-                    <select id="modelSelect">
-                        <option value="">
-                            Nenhum modelo selecionado
-                        </option>
-                    </select>
-
-                </div>
-
-            </div>
-
-            <div
-                id="runtimeStatus"
-                style="
-                    color:var(--text-secondary);
-                    font-size:11px;
-                    white-space:nowrap;
-                "
-            >
-                Runtime: aguardando
-            </div>
-
-        </div>
-
-        <div
-            class="chat-container"
-            id="chatBox"
-        >
-
-            <div class="message-row">
-
-                <div class="avatar bot">
-                    <img
-                        src="icon.png"
-                        class="kimo-logo-img avatar-img"
-                        alt="Kimo"
-                    >
-                </div>
-
-                <div
-                    class="message-content"
-                    id="initialBotMsg"
-                ></div>
-
-            </div>
-
-        </div>
-
-        <div class="input-area">
-
-            <div class="input-box">
-
-                <input
-                    type="text"
-                    id="userInput"
-                    placeholder="Escreve uma mensagem..."
-                    autocomplete="off"
-                    spellcheck="true"
-                >
-
-                <button
-                    class="send-btn"
-                    id="sendBtn"
-                    onclick="sendMessage()"
-                    aria-label="Enviar"
-                >
-                    <i
-                        data-lucide="send"
-                        style="width:16px;height:16px;"
-                    ></i>
-                </button>
-
-            </div>
-
-        </div>
-
+    <!-- Painel Ollama -->
+    <div id="ollamaPanel" class="panel" style="display:none">
+      <div class="panel-title"><i data-lucide="server"></i> Configuração Ollama</div>
+      <div class="field">
+        <label>URL da API</label>
+        <input type="text" class="modal-input" id="ollamaUrlInput" value="http://localhost:11434">
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" class="modal-input" id="ollamaModelInput" list="ollamaModelList" value="llama3">
+        <datalist id="ollamaModelList"></datalist>
+      </div>
+      <button class="btn-primary" onclick="testOllamaConnection()"><i data-lucide="plug-zap"></i> Testar & Guardar</button>
+      <div class="small muted">No Termux: <code>OLLAMA_ORIGINS=* ollama serve</code></div>
     </div>
 
-    <!-- =========================================================
-         SETTINGS MODAL
-    ========================================================== -->
-
-    <div
-        class="modal-overlay"
-        id="settingsModal"
-    >
-
-        <div class="modal">
-
-            <div
-                style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                "
-            >
-
-                <h3>Configurações</h3>
-
-                <button
-                    style="
-                        background:none;
-                        border:none;
-                        color:white;
-                        cursor:pointer;
-                    "
-                    onclick="closeModal('settingsModal')"
-                >
-                    <i
-                        data-lucide="x"
-                        style="width:20px;height:20px;"
-                    ></i>
-                </button>
-
-            </div>
-
-            <div
-                style="
-                    display:flex;
-                    flex-direction:column;
-                    gap:12px;
-                "
-            >
-
-                <label
-                    style="
-                        font-size:14px;
-                        color:var(--text-secondary);
-                    "
-                >
-                    Método LLM
-                </label>
-
-                <select
-                    class="modal-input"
-                    id="llmProvider"
-                >
-                    <option value="sem_ollama">
-                        Local GGUF (Wllama)
-                    </option>
-
-                    <option value="ollama">
-                        Ollama (Termux)
-                    </option>
-                </select>
-
-                <div
-                    style="
-                        background:var(--bg-sidebar);
-                        padding:12px;
-                        border-radius:8px;
-                        border:1px solid var(--border);
-                        display:flex;
-                        flex-direction:column;
-                        gap:10px;
-                    "
-                >
-
-                    <label
-                        style="
-                            font-size:13px;
-                            color:var(--text-secondary);
-                        "
-                    >
-                        Gestão de Ficheiro .gguf
-                    </label>
-
-                    <input
-                        type="file"
-                        id="ggufFileInput"
-                        accept=".gguf"
-                        style="display:none;"
-                        onchange="handleGGUFFileSelect(event)"
-                    >
-
-                    <button
-                        class="btn-secondary"
-                        id="selectGgufBtn"
-                        onclick="
-                            document
-                            .getElementById('ggufFileInput')
-                            .click()
-                        "
-                    >
-
-                        <i
-                            data-lucide="folder-open"
-                            style="width:18px;height:18px;"
-                        ></i>
-
-                        Selecionar Ficheiro .gguf
-
-                    </button>
-
-                    <span
-                        id="ggufStatusInfo"
-                        class="status-box"
-                    >
-                        Nenhum ficheiro selecionado
-                    </span>
-
-                    <span
-                        id="ggufErrorMsg"
-                        style="
-                            font-size:12px;
-                            color:var(--error);
-                            display:none;
-                        "
-                    >
-                        ❌ O ficheiro precisa terminar em .gguf.
-                    </span>
-
-                    <div
-                        class="progress-box"
-                        id="progressBox"
-                    >
-
-                        <div
-                            style="
-                                display:flex;
-                                justify-content:space-between;
-                                font-size:12px;
-                                color:var(--text-secondary);
-                            "
-                        >
-
-                            <span id="progressText">
-                                A preparar...
-                            </span>
-
-                            <span id="progressPercent">
-                                0%
-                            </span>
-
-                        </div>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-bar"
-                                id="progressBar"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                    <button
-                        class="btn-primary"
-                        id="addGgufBtn"
-                        style="display:none;"
-                        onclick="addSelectedGgufModel()"
-                    >
-
-                        <i
-                            data-lucide="cpu"
-                            style="width:18px;height:18px;"
-                        ></i>
-
-                        Carregar Modelo
-
-                    </button>
-
-                    <div class="small-note">
-                        O ficheiro precisa permanecer acessível ao WebView
-                        durante o carregamento. O nome salvo no LocalStorage
-                        não contém os dados do modelo.
-                    </div>
-
-                </div>
-
-            </div>
-
-            <button
-                class="btn-primary"
-                onclick="saveSettings()"
-            >
-                <i
-                    data-lucide="save"
-                    style="width:18px;height:18px;"
-                ></i>
-
-                Guardar
-
-            </button>
-
-        </div>
+    <!-- Parâmetros -->
+    <div class="panel">
+      <div class="panel-title"><i data-lucide="sliders-horizontal"></i> Parâmetros de geração</div>
+      <div class="grid2">
+        <div class="field"><label>Contexto (n_ctx)</label><input type="number" class="modal-input" id="ctxInput" value="2048" min="512" max="8192" step="256"></div>
+        <div class="field"><label>Temperatura</label><input type="number" class="modal-input" id="tempInput" value="0.7" min="0" max="2" step="0.1"></div>
+        <div class="field"><label>Máx. tokens/resposta</label><input type="number" class="modal-input" id="maxTokensInput" value="1024" min="64" max="8192" step="64"></div>
+      </div>
+      <div class="field">
+        <label>System prompt</label>
+        <textarea class="modal-input" id="systemPromptInput" rows="2"></textarea>
+      </div>
+      <div class="small muted">n_ctx aplica-se ao (re)carregar o modelo.</div>
     </div>
 
-    <!-- =========================================================
-         CHANGELOG
-    ========================================================== -->
+    <button class="btn-primary" onclick="saveSettings()"><i data-lucide="save"></i> Guardar configurações</button>
+  </div>
+</div>
 
-    <div
-        class="modal-overlay"
-        id="changelogModal"
-    >
-
-        <div class="modal">
-
-            <div
-                style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                "
-            >
-
-                <h3>Update Log - v1.1.7</h3>
-
-                <button
-                    style="
-                        background:none;
-                        border:none;
-                        color:white;
-                        cursor:pointer;
-                    "
-                    onclick="closeModal('changelogModal')"
-                >
-                    <i
-                        data-lucide="x"
-                        style="width:20px;height:20px;"
-                    ></i>
-                </button>
-
-            </div>
-
-            <div
-                style="
-                    font-size:14px;
-                    color:var(--text-secondary);
-                    display:flex;
-                    flex-direction:column;
-                    gap:10px;
-                    line-height:1.5;
-                "
-            >
-
-                <p>
-                    🚀
-                    <b style="color:var(--text-primary);">
-                        O que há de novo:
-                    </b>
-                </p>
-
-                <ul
-                    style="
-                        padding-left:20px;
-                        display:flex;
-                        flex-direction:column;
-                        gap:6px;
-                    "
-                >
-
-                    <li>
-                        Carregamento real de ficheiros GGUF.
-                    </li>
-
-                    <li>
-                        Inferência local através do Wllama.
-                    </li>
-
-                    <li>
-                        Respostas do modelo no chat.
-                    </li>
-
-                    <li>
-                        Streaming da resposta quando suportado.
-                    </li>
-
-                    <li>
-                        Tratamento de erros de carregamento e inferência.
-                    </li>
-
-                </ul>
-
-            </div>
-
-            <button
-                class="btn-primary"
-                onclick="closeModal('changelogModal')"
-            >
-                Fechar
-            </button>
-
-        </div>
-
+<!-- Modal: Changelog -->
+<div class="modal-overlay" id="changelogModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Update Log — v2.1</h3><button class="icon-btn" data-close="changelogModal"><i data-lucide="x"></i></button></div>
+    <div style="font-size:14px;color:var(--text-secondary);display:flex;flex-direction:column;gap:10px;line-height:1.5">
+      <ul style="padding-left:20px;display:flex;flex-direction:column;gap:6px">
+        <li><b style="color:var(--text-primary)">Download real de modelos .gguf</b> — catálogo com modelos leves + URL personalizado, com progresso e cancelamento.</li>
+        <li><b style="color:var(--text-primary)">Cache persistente (OPFS)</b> — modelos ficam guardados no aparelho; carregas instantaneamente na próxima vez.</li>
+        <li><b style="color:var(--text-primary)">Correção fatal:</b> erro de sintaxe em <code>toString(36.substring(...))</code> quebrava toda a resposta com código.</li>
+        <li><b style="color:var(--text-primary)">API Wllama corrigida:</b> <code>loadModel()</code> em vez de <code>loadModelFromBlob()</code>.</li>
+        <li><b style="color:var(--text-primary)">Thinking real:</b> <code>&lt;think&gt;</code> do Qwen3 em caixa colapsável + switches /think e /no_think.</li>
+        <li><b style="color:var(--text-primary)">Copiar código funciona em WebView</b> (fallback execCommand).</li>
+        <li>Streaming Ollama corrigido, histórico persistente, stats tok/s, validação GGUF (magic bytes), aviso de RAM.</li>
+      </ul>
     </div>
+    <button class="btn-primary" data-close="changelogModal">Fechar</button>
+  </div>
+</div>
 
-    <!-- =========================================================
-         PRIVACY
-    ========================================================== -->
-
-    <div
-        class="modal-overlay"
-        id="policyModal"
-    >
-
-        <div class="modal">
-
-            <div
-                style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                "
-            >
-
-                <h3>Políticas de Privacidade</h3>
-
-                <button
-                    style="
-                        background:none;
-                        border:none;
-                        color:white;
-                        cursor:pointer;
-                    "
-                    onclick="closeModal('policyModal')"
-                >
-                    <i
-                        data-lucide="x"
-                        style="width:20px;height:20px;"
-                    ></i>
-                </button>
-
-            </div>
-
-            <div
-                style="
-                    font-size:13px;
-                    color:var(--text-secondary);
-                    display:flex;
-                    flex-direction:column;
-                    gap:10px;
-                    line-height:1.5;
-                "
-            >
-
-                <p>
-                    O <b style="color:var(--text-primary);">
-                        Kimo AI
-                    </b>
-                    executa o modelo GGUF localmente no dispositivo
-                    através do runtime integrado.
-                </p>
-
-                <p>
-                    <b>1. Armazenamento Local:</b>
-                    configurações e informações da interface podem ser
-                    guardadas no LocalStorage.
-                </p>
-
-                <p>
-                    <b>2. Modelo GGUF:</b>
-                    depois de carregado, o modelo é processado localmente
-                    pelo runtime.
-                </p>
-
-                <p>
-                    <b>3. Ficheiros:</b>
-                    o utilizador escolhe explicitamente qual ficheiro GGUF
-                    deseja carregar.
-                </p>
-
-            </div>
-
-            <button
-                class="btn-primary"
-                onclick="closeModal('policyModal')"
-            >
-                Entendido
-            </button>
-
-        </div>
-
+<!-- Modal: Privacidade -->
+<div class="modal-overlay" id="policyModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Privacidade</h3><button class="icon-btn" data-close="policyModal"><i data-lucide="x"></i></button></div>
+    <div style="font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;gap:10px;line-height:1.5">
+      <p><b style="color:var(--text-primary)">1. Zero envio de dados:</b> inferência 100% local via WebAssembly. Nenhuma mensagem sai do aparelho.</p>
+      <p><b style="color:var(--text-primary)">2. Armazenamento local:</b> preferências no <code>localStorage</code>; modelos descarregados no <code>OPFS</code> do próprio WebView.</p>
+      <p><b style="color:var(--text-primary)">3. Memória:</b> modelos residem na RAM da sessão e são libertados ao descarregar/fechar.</p>
     </div>
+    <button class="btn-primary" data-close="policyModal">Entendido</button>
+  </div>
+</div>
 
-    <!-- =========================================================
-         APPLICATION
-    ========================================================== -->
+<script type="module">
+/* ============ Motor Wllama (import dinâmico: a UI funciona mesmo offline) ============ */
+let WllamaClass = null;
+const wllamaEnginePromise = import('https://cdn.jsdelivr.net/npm/@wllama/wllama@2/esm/index.js')
+  .then(m => { WllamaClass = m.Wllama; })
+  .catch(e => { console.error('Motor Wllama não carregou:', e); });
 
-    <script type="module">
+const WLLAMA_PATHS = {
+  'single-thread/wllama.wasm': 'https://cdn.jsdelivr.net/npm/@wllama/wllama@2/esm/single-thread/wllama.wasm',
+  'multi-thread/wllama.wasm': 'https://cdn.jsdelivr.net/npm/@wllama/wllama@2/esm/multi-thread/wllama.wasm',
+};
 
-        import { Wllama } from "@wllama/wllama";
+/* ============ Catálogo de modelos reais (CORS-friendly, HuggingFace) ============ */
+const MODEL_CATALOG = [
+  { name: 'Qwen3 0.6B — thinking', size: '~520 MB · raciocínio', url: 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf' },
+  { name: 'Qwen2.5 0.5B Instruct', size: '~400 MB · rápido', url: 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0_5b-instruct-q4_k_m.gguf' },
+  { name: 'SmolLM2 360M Instruct', size: '~290 MB · muito leve', url: 'https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q4_k_m.gguf' },
+  { name: 'Llama 3.2 1B Instruct', size: '~810 MB · equilibrado', url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf' },
+  { name: 'TinyLlama 1.1B Chat', size: '~660 MB', url: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf' },
+  { name: 'SmolLM2 1.7B Instruct', size: '~1.1 GB · mais capaz', url: 'https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF/resolve/main/smollm2-1.7b-instruct-q4_k_m.gguf' },
+];
 
-        /* =====================================================
-           GLOBAL STATE
-        ===================================================== */
+const DEFAULT_STATE = {
+  provider: 'wllama', ctx: 2048, temp: 0.7, maxTokens: 1024,
+  systemPrompt: 'You are Kimo AI, a helpful assistant. Always answer in the same language the user writes in.',
+  thinking: false, ollamaUrl: 'http://localhost:11434', ollamaModel: 'llama3',
+};
 
-        let wllama = null;
-        let pendingFile = null;
-        let loadedModelName = null;
-        let isGenerating = false;
+const state = { ...DEFAULT_STATE, history: [] };
+let wllamaInstance = null, isModelLoaded = false, currentModelName = null, currentModelSize = 0;
+let pendingFile = null, isGenerating = false, isDownloading = false, stopRequested = false;
+let genAbort = null, downloadAbort = null, autoScroll = true;
+const codeStore = {}; let codeSeq = 0;
 
-        const chatHistory = [];
+/* ============ Helpers ============ */
+const $ = id => document.getElementById(id);
+const storage = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  remove(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+function refreshIcons(){ try{ if(window.lucide?.createIcons) window.lucide.createIcons(); }catch(e){} }
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function mdToHtml(md){
+  try{ if(window.marked && window.DOMPurify) return DOMPurify.sanitize(marked.parse(md || '')); }catch(e){}
+  return escapeHtml(md || '').replace(/\n/g,'<br>');
+}
+function formatBytes(b){
+  if(!Number.isFinite(b)) return '';
+  const u=['B','KB','MB','GB']; let i=0,v=b;
+  while(v>=1024 && i<u.length-1){ v/=1024; i++; }
+  return v.toFixed(v>=100||i===0?0:1)+' '+u[i];
+}
+function clampInt(v,min,max,d){ const n=parseInt(v,10); return Number.isFinite(n)?Math.min(max,Math.max(min,n)):d; }
+function clampFloat(v,min,max,d){ const n=parseFloat(v); return Number.isFinite(n)?Math.min(max,Math.max(min,n)):d; }
+function cleanUrl(u){ return String(u||'').trim().replace(/\/+$/,''); }
+async function isGgufMagic(f){
+  try{
+    const h = new Uint8Array(await f.slice(0,4).arrayBuffer());
+    return h[0]===0x47 && h[1]===0x47 && h[2]===0x55 && h[3]===0x46; // "GGUF"
+  }catch(e){ return false; }
+}
+function memoryWarn(sizeBytes){
+  const dm = (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0) ? navigator.deviceMemory : null;
+  if(!dm) return true;
+  const gb = sizeBytes / 1073741824;
+  if(gb > dm * 0.45){
+    return confirm(`Aviso: o modelo tem ${gb.toFixed(2)} GB e o dispositivo tem ~${dm} GB de RAM.\n\nO carregamento pode falhar por falta de memória. Continuar?`);
+  }
+  return true;
+}
+function scrollToBottom(force){ const b=$('chatBox'); if(force || autoScroll) b.scrollTop = b.scrollHeight; }
+function autoResizeTextarea(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,140)+'px'; }
 
-        const WLLAMA_CONFIG = {
-            // O runtime wasm.
-            // Dependendo da build do Wllama escolhida,
-            // esta URL pode ser alterada.
-            wasmPath:
-                "https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/wasm"
-        };
+/* ============ OPFS (cache persistente de modelos) ============ */
+async function opfsDir(){
+  const root = await navigator.storage.getDirectory();
+  return root.getDirectoryHandle('kimo-models', { create: true });
+}
+async function listCachedModels(){
+  if(!navigator.storage?.getDirectory) return [];
+  try{
+    const dir = await opfsDir(); const out = [];
+    for await (const [name, handle] of dir.entries()){
+      if(handle.kind === 'file' && name.toLowerCase().endsWith('.gguf')){
+        const f = await handle.getFile();
+        out.push({ name, size: f.size, file: f });
+      }
+    }
+    return out.sort((a,b)=>a.name.localeCompare(b.name));
+  }catch(e){ return []; }
+}
+async function deleteCachedModel(name){ try{ const d = await opfsDir(); await d.removeEntry(name); }catch(e){} }
 
-        /* =====================================================
-           DOM HELPERS
-        ===================================================== */
+/* ============ UI: sidebar / modais / estado ============ */
+window.toggleSidebar = () => $('sidebar').classList.toggle('open');
+window.closeSidebar = () => $('sidebar').classList.remove('open');
+window.openModal = id => { $(id).style.display='flex'; window.closeSidebar(); };
+window.closeModal = id => { $(id).style.display='none'; };
 
-        const $ = id => document.getElementById(id);
+function updateStatusBadge(cls, text){
+  const badge = $('modelStatusBadge');
+  badge.className = 'status-badge ' + cls;
+  const icons = { ready:'check-circle', loading:'loader', idle:'alert-circle' };
+  badge.innerHTML = `<i data-lucide="${icons[cls]||'alert-circle'}"></i> ${escapeHtml(text)}`;
+  refreshIcons();
+}
+function updateModelSelect(){
+  const sel = $('modelSelect'); sel.innerHTML = '';
+  const opt = document.createElement('option');
+  if(state.provider === 'ollama'){ opt.textContent = `[Ollama] ${state.ollamaModel}`; }
+  else if(isModelLoaded && currentModelName){ opt.textContent = `[GGUF] ${currentModelName}${currentModelSize?' · '+formatBytes(currentModelSize):''}`; }
+  else { opt.textContent = 'Nenhum modelo carregado'; }
+  sel.appendChild(opt);
+}
+function updateSendState(){
+  const hasText = $('userInput').value.trim().length > 0;
+  const canGen = (state.provider === 'wllama' && isModelLoaded) || state.provider === 'ollama';
+  $('sendBtn').disabled = !(hasText && canGen) || isGenerating;
+}
+function setGeneratingUI(active){
+  $('sendBtn').style.display = active ? 'none' : 'flex';
+  $('stopBtn').style.display = active ? 'flex' : 'none';
+  updateSendState();
+}
+function setProgress(pct, text){
+  $('modelProgressBar').style.width = Math.max(0, Math.min(100, pct)) + '%';
+  if(text !== undefined) $('loadProgressText').textContent = text;
+}
+function setDownloadUI(active){
+  $('downloadProgressContainer').style.display = active ? 'block' : 'none';
+  $('cancelDownloadBtn').style.display = active ? 'inline-flex' : 'none';
+  if(!active){ $('downloadProgressBar').style.width='0%'; $('downloadProgressText').textContent=''; }
+}
+function setDownloadProgress(received, total){
+  const pct = total > 0 ? (received/total)*100 : 0;
+  $('downloadProgressBar').style.width = pct.toFixed(1) + '%';
+  $('downloadProgressText').textContent = total > 0
+    ? `${formatBytes(received)} / ${formatBytes(total)} (${Math.round(pct)}%)`
+    : `${formatBytes(received)} descarregados`;
+}
 
-        function setRuntimeStatus(text) {
-            const el = $("runtimeStatus");
+/* ============ Mensagens ============ */
+function addMessageRow(role){
+  const row = document.createElement('div');
+  row.className = 'message-row';
+  row.innerHTML = `<div class="avatar ${role==='user'?'user':'bot'}"><i data-lucide="${role==='user'?'user':'bot'}"></i></div><div class="message-content"></div>`;
+  $('chatBox').appendChild(row);
+  refreshIcons();
+  return row.querySelector('.message-content');
+}
+function appendUserMessage(text){ addMessageRow('user').textContent = text; scrollToBottom(true); }
+function appendSystemMessage(md){ const el = addMessageRow('assistant'); el.innerHTML = mdToHtml(md); refreshIcons(); scrollToBottom(true); }
 
-            if (el) {
-                el.textContent = text;
+function splitThink(text){
+  const open = text.indexOf('<think>');
+  if(open === -1) return { think: null, answer: text };
+  const close = text.indexOf('</think>');
+  const thinkRaw = close === -1 ? text.slice(open+7) : text.slice(open+7, close);
+  const answer = close === -1 ? '' : (text.slice(0,open) + text.slice(close+8)).trim();
+  const think = thinkRaw.trim();
+  return { think: think.length ? think : null, answer };
+}
+function thinkHtml(think){
+  return `<details class="think-box"><summary>💭 Raciocínio (toca para expandir)</summary><div class="think-body">${mdToHtml(think)}</div></details>`;
+}
+function extractCodeBlocks(md){
+  const blocks = [];
+  const re = /```([A-Za-z0-9_+\-#.]*)(?:\r?\n)([\s\S]*?)```/g;
+  let m;
+  while((m = re.exec(md)) !== null) blocks.push({ lang: m[1], code: m[2] });
+  const parts = md.split('```');
+  if(parts.length % 2 === 0){ // bloco não fechado (geração interrompida)
+    const tail = parts[parts.length-1], nl = tail.indexOf('\n');
+    if(nl >= 0 && tail.slice(nl+1).trim()) blocks.push({ lang: tail.slice(0,nl).trim(), code: tail.slice(nl+1) });
+  }
+  return blocks;
+}
+function renderWithCodeTabs(raw){
+  const mdHtml = mdToHtml(raw || '');
+  const blocks = extractCodeBlocks(raw || '');
+  if(!blocks.length) return mdHtml;
+  let panes = '';
+  blocks.forEach(b => {
+    const cid = 'c' + (++codeSeq);
+    codeStore[cid] = b.code;
+    panes += `<div class="code-block-wrapper">
+      <div class="code-header"><span>${escapeHtml(b.lang || 'code')}</span>
+      <button class="copy-code-btn" data-code-id="${cid}">Copiar</button></div>
+      <pre><code>${escapeHtml(b.code)}</code></pre></div>`;
+  });
+  return `<div class="msg-tabs-container">
+    <div class="msg-tab-buttons">
+      <button class="msg-tab-btn active" data-pane="resp">Resposta</button>
+      <button class="msg-tab-btn" data-pane="code">Código (${blocks.length})</button>
+    </div>
+    <div class="msg-pane active" data-pane="resp">${mdHtml}</div>
+    <div class="msg-pane" data-pane="code">${panes}</div>
+  </div>`;
+}
+function finalizeAssistant(el, raw, tokens, t0, interrupted){
+  const secs = (performance.now()-t0)/1000;
+  const { think, answer } = splitThink(raw);
+  let html = '';
+  if(think) html += thinkHtml(think);
+  html += renderWithCodeTabs(answer !== null ? answer : raw);
+  const bits = [];
+  if(tokens > 0) bits.push(`⚡ ${tokens} tokens${secs > 0.5 ? ` · ${(tokens/secs).toFixed(1)} tok/s` : ''}`);
+  if(interrupted) bits.push('⏹️ interrompido');
+  if(bits.length) html += `<div class="stats-line">${bits.join(' · ')}</div>`;
+  el.innerHTML = html;
+  refreshIcons();
+  scrollToBottom();
+}
+
+async function copyTextToClipboard(txt, btn){
+  let ok = false;
+  try{
+    if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(txt); ok = true; }
+  }catch(e){}
+  if(!ok){ // fallback essencial para WebView
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.setAttribute('readonly','');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length);
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){}
+  }
+  if(ok && btn){
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    setTimeout(() => btn.textContent = orig, 1600);
+  } else if(!ok){ alert('Não foi possível copiar automaticamente neste WebView.'); }
+}
+
+/* ============ Download de modelos ============ */
+async function downloadToFile(url, filename){
+  const resp = await fetch(url, { signal: downloadAbort.signal });
+  if(!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
+  const total = parseInt(resp.headers.get('content-length') || '0', 10);
+  const reader = resp.body.getReader();
+
+  let writable = null, handle = null;
+  try{
+    const dir = await opfsDir();
+    handle = await dir.getFileHandle(filename, { create: true });
+    writable = await handle.createWritable();
+  }catch(e){ handle = null; writable = null; } // sem OPFS → mantém em memória
+
+  const chunks = [];
+  let received = 0, pending = [], pendingLen = 0, lastUi = 0;
+  const flush = async () => {
+    if(!pendingLen) return;
+    const merged = new Uint8Array(pendingLen); let o = 0;
+    for(const c of pending){ merged.set(c, o); o += c.byteLength; }
+    pending = []; pendingLen = 0;
+    if(writable) await writable.write(merged); else chunks.push(merged);
+  };
+  try{
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+      received += value.byteLength;
+      pending.push(value); pendingLen += value.byteLength;
+      if(pendingLen >= 4*1024*1024) await flush();
+      const now = performance.now();
+      if(now - lastUi > 200){ lastUi = now; setDownloadProgress(received, total); }
+    }
+    await flush();
+    if(writable){ await writable.close(); return await handle.getFile(); }
+    return new Blob(chunks);
+  }catch(err){
+    if(writable){ try{ await writable.abort(); }catch(e){} }
+    throw err;
+  }
+}
+
+window.startDownload = async function(url){
+  if(isDownloading) return;
+  url = String(url || '').trim();
+  if(!/^https?:\/\//i.test(url)){ alert('URL inválido. Tem de começar por http:// ou https://'); return; }
+  if(navigator.onLine === false){ alert('Estás offline. Liga a internet para descarregar o modelo.'); return; }
+
+  let filename = 'model.gguf';
+  try{
+    const p = new URL(url).pathname.split('/').filter(Boolean).pop() || '';
+    filename = decodeURIComponent(p);
+  }catch(e){}
+  if(!/\.gguf$/i.test(filename)) filename = (filename || 'model') + '.gguf';
+
+  isDownloading = true;
+  downloadAbort = new AbortController();
+  setDownloadUI(true);
+  setDownloadProgress(0, 0);
+
+  try{
+    const file = await downloadToFile(url, filename);
+    if(!(await isGgufMagic(file))) throw new Error('O ficheiro descarregado não é um GGUF válido.');
+    setDownloadUI(false);
+    appendSystemMessage(`⬇️ **${filename}** descarregado (${formatBytes(file.size)}). A carregar na memória...`);
+    await refreshCachedList();
+    await loadModelFlow(file, filename);
+  }catch(err){
+    await deleteCachedModel(filename); // remove ficheiro parcial
+    if(err && (err.name === 'AbortError' || stopRequested)){
+      appendSystemMessage('Download cancelado.');
+    }else if(err instanceof TypeError){
+      alert('Falha de rede ou CORS. Usa URLs diretos do HuggingFace (…/resolve/main/….gguf).');
+    }else{
+      console.error(err);
+      alert('Falha no download: ' + (err.message || err));
+    }
+  }finally{
+    isDownloading = false; downloadAbort = null;
+    setDownloadUI(false);
+  }
+};
+window.cancelDownload = function(){ if(downloadAbort){ try{ downloadAbort.abort(); }catch(e){} } };
+window.startDownloadFromInput = function(){
+  const input = $('modelUrlInput');
+  const url = input.value.trim();
+  if(!url){ alert('Cola o URL direto de um ficheiro .gguf'); return; }
+  input.value = '';
+  window.startDownload(url);
+};
+
+/* ============ Catálogo / lista de cache ============ */
+function buildCatalog(){
+  const wrap = $('catalogList'); wrap.innerHTML = '';
+  MODEL_CATALOG.forEach(m => {
+    const row = document.createElement('div'); row.className = 'catalog-item';
+    const info = document.createElement('div');
+    info.innerHTML = `<div class="cat-name">${escapeHtml(m.name)}</div><div class="cat-size">${escapeHtml(m.size)}</div>`;
+    const btn = document.createElement('button');
+    btn.className = 'chip-btn'; btn.title = 'Descarregar ' + m.name;
+    btn.innerHTML = '<i data-lucide="download"></i>';
+    btn.onclick = () => window.startDownload(m.url);
+    row.appendChild(info); row.appendChild(btn);
+    wrap.appendChild(row);
+  });
+  refreshIcons();
+}
+async function refreshCachedList(){
+  const wrap = $('cachedList'); wrap.innerHTML = '';
+  const models = await listCachedModels();
+  if(!models.length){
+    wrap.innerHTML = '<div class="small muted">Nada guardado ainda — descarrega um modelo acima.</div>';
+    return;
+  }
+  models.forEach(m => {
+    const row = document.createElement('div'); row.className = 'catalog-item';
+    const info = document.createElement('div');
+    info.innerHTML = `<div class="cat-name">${escapeHtml(m.name)}</div><div class="cat-size">${formatBytes(m.size)}</div>`;
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'chip-btn'; loadBtn.title = 'Carregar';
+    loadBtn.innerHTML = '<i data-lucide="play"></i>';
+    loadBtn.onclick = () => loadModelFlow(m.file, m.name);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'chip-btn warn'; delBtn.title = 'Apagar do armazenamento';
+    delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+    delBtn.onclick = async () => {
+      if(confirm(`Apagar ${m.name} do armazenamento?`)){
+        if(isModelLoaded && currentModelName === m.name) await window.unloadGGUFModel();
+        await deleteCachedModel(m.name);
+        refreshCachedList();
+      }
+    };
+    actions.appendChild(loadBtn); actions.appendChild(delBtn);
+    row.appendChild(info); row.appendChild(actions);
+    wrap.appendChild(row);
+  });
+  refreshIcons();
+}
+
+/* ============ Carregar / descarregar modelo ============ */
+async function loadModelFlow(file, nameOverride){
+  if(isGenerating){ alert('Espera que a geração atual termine.'); return; }
+  const fname = nameOverride || file.name || 'model.gguf';
+
+  if(!(await isGgufMagic(file))){ alert('O ficheiro não é um GGUF válido (magic bytes em falta).'); return; }
+  if(!memoryWarn(file.size)) return;
+
+  await wllamaEnginePromise;
+  if(!WllamaClass){ alert('O motor Wllama (WASM) não carregou. Verifica a internet e recarrega a página (só é preciso na 1ª vez).'); return; }
+
+  $('modelProgressContainer').style.display = 'block';
+  const pt = $('loadProgressText'); pt.style.display = 'block';
+  $('loadGgufBtn').disabled = true;
+  updateStatusBadge('loading', 'A carregar...');
+  setProgress(10, 'A inicializar motor WASM...');
+
+  try{
+    if(wllamaInstance){
+      try{ if(typeof wllamaInstance.exit === 'function') await wllamaInstance.exit(); }catch(e){}
+      wllamaInstance = null;
+    }
+    wllamaInstance = new WllamaClass(WLLAMA_PATHS);
+    if(typeof wllamaInstance.loadModel !== 'function'){
+      throw new Error('API do Wllama incompatível. Limpa a cache do WebView e tenta de novo.');
+    }
+    const threads = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
+    setProgress(20, `A carregar tensores (threads: ${threads}${window.crossOriginIsolated ? ', multi-thread' : ', single-thread'})...`);
+
+    // ✅ API correta do @wllama/wllama@2: loadModel(blob, config)
+    await wllamaInstance.loadModel(file, {
+      n_ctx: state.ctx,
+      n_threads: threads,
+      progressCallback: ({ loaded, total }) => {
+        const pct = total > 0 ? Math.round((loaded/total)*100) : 0;
+        setProgress(20 + pct * 0.75, `A carregar na memória: ${pct}%`);
+      }
+    });
+
+    isModelLoaded = true;
+    currentModelName = fname;
+    currentModelSize = file.size;
+    checkThinkingSupport();
+    updateModelSelect();
+    updateStatusBadge('ready', 'Pronto');
+    $('unloadGgufBtn').style.display = 'inline-flex';
+    setProgress(100, '✅ Modelo carregado!');
+    appendSystemMessage(`Modelo **${fname}** (${formatBytes(file.size)}) carregado com ${state.ctx} tokens de contexto. Pergunta algo! 👇`);
+    updateSendState();
+    setTimeout(() => { $('modelProgressContainer').style.display='none'; pt.textContent=''; }, 2000);
+  }catch(err){
+    console.error(err);
+    isModelLoaded = false; currentModelName = null; wllamaInstance = null;
+    updateStatusBadge('idle', 'Erro');
+    setProgress(0, '❌ ' + (err.message || err));
+    alert('Falha ao carregar o modelo: ' + (err.message || err));
+    $('loadGgufBtn').disabled = !pendingFile;
+    updateModelSelect();
+    updateSendState();
+  }
+}
+
+window.loadPendingFile = function(){ if(pendingFile) loadModelFlow(pendingFile, pendingFile.name); };
+
+window.unloadGGUFModel = async function(){
+  if(wllamaInstance){ try{ if(typeof wllamaInstance.exit === 'function') await wllamaInstance.exit(); }catch(e){} }
+  wllamaInstance = null;
+  isModelLoaded = false; currentModelName = null; currentModelSize = 0;
+  $('unloadGgufBtn').style.display = 'none';
+  $('loadGgufBtn').disabled = !pendingFile;
+  $('modelProgressContainer').style.display = 'none';
+  $('loadProgressText').textContent = '';
+  $('thinkingToggle').disabled = true;
+  updateStatusBadge('idle', 'Descarregado');
+  updateModelSelect();
+  updateSendState();
+  appendSystemMessage('Modelo descarregado da memória.');
+};
+
+window.handleGGUFFileSelect = async function(e){
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  if(!/\.gguf$/i.test(file.name)){ alert('O ficheiro tem de terminar em .gguf'); return; }
+  if(!(await isGgufMagic(file))){ alert('Este ficheiro não parece ser um GGUF válido.'); return; }
+  pendingFile = file;
+  $('ggufFileInfo').textContent = `${file.name} · ${formatBytes(file.size)}`;
+  $('loadGgufBtn').disabled = false;
+};
+
+function modelMetaName(){
+  try{
+    if(wllamaInstance && typeof wllamaInstance.getModelMetadata === 'function'){
+      const meta = wllamaInstance.getModelMetadata() || {};
+      return String(meta['general.name'] || meta['general.basename'] || '');
+    }
+  }catch(e){}
+  return '';
+}
+function checkThinkingSupport(){
+  const toggle = $('thinkingToggle');
+  const src = ((currentModelName || '') + ' ' + modelMetaName()).toLowerCase();
+  const supports = /(qwen3|qwq|deepseek-r1|\br1\b)/.test(src);
+  toggle.disabled = !supports;
+  if(!supports){ toggle.checked = false; state.thinking = false; }
+  toggle.parentElement.title = supports ? 'Ativar modo de raciocínio passo a passo' : 'Este modelo não suporta thinking';
+}
+
+/* ============ Configurações ============ */
+function saveSettingsToStorage(){
+  storage.set('kimo_settings_v2', JSON.stringify({
+    provider: state.provider, ctx: state.ctx, temp: state.temp, maxTokens: state.maxTokens,
+    systemPrompt: state.systemPrompt, ollamaUrl: state.ollamaUrl, ollamaModel: state.ollamaModel,
+    thinking: state.thinking
+  }));
+}
+function loadSettings(){
+  let data = {};
+  try{ const raw = storage.get('kimo_settings_v2'); if(raw) data = JSON.parse(raw) || {}; }catch(e){}
+  state.ctx = data.ctx || DEFAULT_STATE.ctx;
+  state.temp = (typeof data.temp === 'number') ? data.temp : DEFAULT_STATE.temp;
+  state.maxTokens = data.maxTokens || DEFAULT_STATE.maxTokens;
+  state.systemPrompt = (typeof data.systemPrompt === 'string') ? data.systemPrompt : DEFAULT_STATE.systemPrompt;
+  state.provider = data.provider === 'ollama' ? 'ollama' : 'wllama';
+  state.ollamaUrl = data.ollamaUrl || DEFAULT_STATE.ollamaUrl;
+  state.ollamaModel = data.ollamaModel || DEFAULT_STATE.ollamaModel;
+  state.thinking = !!data.thinking;
+
+  $('ctxInput').value = state.ctx;
+  $('tempInput').value = state.temp;
+  $('maxTokensInput').value = state.maxTokens;
+  $('systemPromptInput').value = state.systemPrompt;
+  $('ollamaUrlInput').value = state.ollamaUrl;
+  $('ollamaModelInput').value = state.ollamaModel;
+  $('thinkingToggle').checked = state.thinking;
+  $('llmProvider').value = state.provider;
+  changeProvider(state.provider);
+}
+function changeProvider(val){
+  state.provider = val === 'ollama' ? 'ollama' : 'wllama';
+  $('ggufPanel').style.display = state.provider === 'wllama' ? 'flex' : 'none';
+  $('ollamaPanel').style.display = state.provider === 'ollama' ? 'flex' : 'none';
+  updateModelSelect();
+  updateSendState();
+}
+window.changeProvider = changeProvider;
+
+window.saveSettings = function(){
+  state.ctx = clampInt($('ctxInput').value, 512, 8192, 2048);
+  state.temp = clampFloat($('tempInput').value, 0, 2, 0.7);
+  state.maxTokens = clampInt($('maxTokensInput').value, 64, 8192, 1024);
+  state.systemPrompt = $('systemPromptInput').value;
+  state.ollamaUrl = cleanUrl($('ollamaUrlInput').value) || DEFAULT_STATE.ollamaUrl;
+  state.ollamaModel = ($('ollamaModelInput').value || '').trim() || DEFAULT_STATE.ollamaModel;
+  saveSettingsToStorage();
+  updateModelSelect();
+  updateSendState();
+  closeModal('settingsModal');
+};
+
+window.testOllamaConnection = async function(){
+  const url = cleanUrl($('ollamaUrlInput').value);
+  try{
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(url + '/api/tags', { signal: ctrl.signal });
+    clearTimeout(t);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const dl = $('ollamaModelList'); dl.innerHTML = '';
+    (data.models || []).forEach(m => { const o = document.createElement('option'); o.value = m.name; dl.appendChild(o); });
+    state.ollamaUrl = url;
+    saveSettingsToStorage();
+    updateModelSelect(); updateSendState();
+    appendSystemMessage(`✅ Ollama conectado — ${(data.models||[]).length} modelos disponíveis.`);
+    alert('Ligação OK! ' + ((data.models||[]).length) + ' modelos encontrados.');
+  }catch(e){
+    alert('Não foi possível conectar a ' + url + '.\n\nDica: inicia o Ollama com OLLAMA_ORIGINS=* (necessário para CORS a partir do WebView).');
+  }
+};
+
+/* ============ Histórico ============ */
+function persistHistory(){ storage.set('kimo_history_v2', JSON.stringify(state.history.slice(-80))); }
+function restoreHistory(){
+  try{
+    const raw = storage.get('kimo_history_v2');
+    if(!raw) return false;
+    const arr = JSON.parse(raw);
+    if(!Array.isArray(arr) || !arr.length) return false;
+    state.history = arr;
+    $('chatBox').innerHTML = '';
+    arr.forEach(m => {
+      if(!m) return;
+      if(m.role === 'user'){ appendUserMessage(m.content); }
+      else if(m.role === 'assistant'){
+        const el = addMessageRow('assistant');
+        const { think, answer } = splitThink(m.content || '');
+        let html = '';
+        if(think) html += thinkHtml(think);
+        html += renderWithCodeTabs(answer !== null ? answer : (m.content || ''));
+        el.innerHTML = html;
+      }
+    });
+    refreshIcons();
+    scrollToBottom(true);
+    return true;
+  }catch(e){ return false; }
+}
+window.clearConversation = function(){
+  if(!confirm('Apagar toda a conversa?')) return;
+  state.history = [];
+  storage.remove('kimo_history_v2');
+  $('chatBox').innerHTML = '';
+  appendSystemMessage('Conversa limpa. ✨');
+  closeSidebar();
+};
+
+/* ============ Geração (Wllama + Ollama) ============ */
+function buildMessages(){
+  const msgs = [];
+  const sys = state.systemPrompt.trim();
+  if(sys) msgs.push({ role: 'system', content: sys });
+  state.history.slice(-16).forEach(m => msgs.push({ role: m.role, content: m.content }));
+  return msgs;
+}
+
+async function sendMessage(){
+  const input = $('userInput');
+  let text = input.value.trim();
+  if(!text || isGenerating) return;
+
+  if(state.provider === 'wllama' && !isModelLoaded){
+    alert('Nenhum modelo .gguf carregado. Abre Configurações para descarregar/carregar um modelo.');
+    openModal('settingsModal');
+    return;
+  }
+
+  input.value = '';
+  autoResizeTextarea(input);
+
+  // Soft switches do Qwen3 (/think, /no_think)
+  if(state.provider === 'wllama' && !$('thinkingToggle').disabled){
+    text += state.thinking ? ' /think' : ' /no_think';
+  }
+
+  state.history.push({ role: 'user', content: text });
+  persistHistory();
+  appendUserMessage(text);
+
+  isGenerating = true; stopRequested = false;
+  setGeneratingUI(true);
+
+  const contentEl = addMessageRow('assistant');
+  contentEl.innerHTML = `<div class="stream-status">Pensando…</div>
+    <details class="think-box" style="display:none" open><summary>💭 A raciocinar…</summary><div class="think-text"></div></details>
+    <div class="answer-text"></div>`;
+  scrollToBottom(true);
+
+  const statusEl = contentEl.querySelector('.stream-status');
+  const thinkBox = contentEl.querySelector('.think-box');
+  const thinkText = contentEl.querySelector('.think-text');
+  const answerEl  = contentEl.querySelector('.answer-text');
+
+  let full = '', tokens = 0, interrupted = false, failed = false;
+  const t0 = performance.now();
+
+  const liveUpdate = txt => {
+    const { think, answer } = splitThink(txt);
+    if(think !== null){ statusEl.style.display='none'; thinkBox.style.display='block'; thinkText.textContent = think; }
+    if(answer){ statusEl.style.display='none'; answerEl.textContent = answer; }
+    scrollToBottom();
+  };
+
+  try{
+    if(state.provider === 'wllama'){
+      const result = await wllamaInstance.createChatCompletion(buildMessages(), {
+        nPredict: state.maxTokens,
+        sampling: { temp: state.temp, top_k: 40, top_p: 0.9 },
+        onNewToken: (token, piece, currentText, opt) => {
+          try{
+            tokens++;
+            if(stopRequested){
+              if(opt && typeof opt.abortSignal === 'function') opt.abortSignal();
+              return;
             }
+            full = currentText;
+            liveUpdate(full);
+          }catch(e){}
         }
-
-        function scrollChat() {
-            const box = $("chatBox");
-
-            if (box) {
-                box.scrollTop = box.scrollHeight;
-            }
+      });
+      if(typeof result === 'string' && result.length) full = result;
+      else if(result && typeof result.outputText === 'string' && result.outputText.length) full = result.outputText;
+    }else{
+      // Ollama — streaming com buffer correto por linhas
+      genAbort = new AbortController();
+      const base = cleanUrl($('ollamaUrlInput').value || state.ollamaUrl);
+      const model = ($('ollamaModelInput').value || state.ollamaModel).trim();
+      const res = await fetch(base + '/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: genAbort.signal,
+        body: JSON.stringify({
+          model, messages: buildMessages(), stream: true,
+          options: { temperature: state.temp, num_predict: state.maxTokens }
+        })
+      });
+      if(!res.ok) throw new Error('Ollama respondeu com HTTP ' + res.status);
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while(true){
+        const { done, value } = await reader.read();
+        if(done) break;
+        buf += dec.decode(value, { stream: true });
+        let nl;
+        while((nl = buf.indexOf('\n')) >= 0){
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if(!line) continue;
+          let json; try{ json = JSON.parse(line); }catch(e){ continue; }
+          const piece = json.message?.content || '';
+          if(piece){ full += piece; tokens++; liveUpdate(full); }
+          if(json.done) break;
         }
-
-        function escapeHtml(text) {
-            return String(text)
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        /* =====================================================
-           LOGOS
-        ===================================================== */
-
-        function initLogos() {
-
-            document
-                .querySelectorAll(".kimo-logo-img")
-                .forEach(img => {
-                    img.src = "icon.png";
-                });
-
-        }
-
-        /* =====================================================
-           MESSAGE UI
-        ===================================================== */
-
-        function addUserMessage(text) {
-
-            const row =
-                document.createElement("div");
-
-            row.className = "message-row";
-
-            row.innerHTML = `
-                <div class="avatar user">
-                    <i
-                        data-lucide="user"
-                        style="width:18px;height:18px;"
-                    ></i>
-                </div>
-
-                <div class="message-content"></div>
-            `;
-
-            row.querySelector(
-                ".message-content"
-            ).textContent = text;
-
-            $("chatBox").appendChild(row);
-
-            lucide.createIcons();
-
-            scrollChat();
-
-        }
-
-        function createBotMessage(initialText = "") {
-
-            const row =
-                document.createElement("div");
-
-            row.className = "message-row";
-
-            row.innerHTML = `
-                <div class="avatar bot">
-                    <img
-                        src="icon.png"
-                        class="kimo-logo-img avatar-img"
-                        alt="Kimo"
-                    >
-                </div>
-
-                <div class="message-content"></div>
-            `;
-
-            const content =
-                row.querySelector(
-                    ".message-content"
-                );
-
-            content.innerHTML =
-                marked.parse(initialText);
-
-            $("chatBox").appendChild(row);
-
-            lucide.createIcons();
-
-            scrollChat();
-
-            return content;
-
-        }
-
-        /* =====================================================
-           ENVIRONMENT
-        ===================================================== */
-
-        function checkEnvironment() {
-
-            const ua =
-                navigator.userAgent ||
-                navigator.vendor ||
-                window.opera;
-
-            const isMobile =
-                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
-                .test(ua)
-                ||
-                window.innerWidth <= 768;
-
-            const isWebView =
-                /wv|Android.*Version\/[0-9]\.[0-9]/i
-                .test(ua)
-                ||
-                window.Android !== undefined;
-
-            /*
-             * Em desenvolvimento, se não quiseres bloquear desktop,
-             * podes comentar o bloco abaixo.
-             */
-
-            if (!isMobile || !isWebView) {
-
-                $("pcBlockOverlay")
-                    .style
-                    .display = "flex";
-
-                document.body.style.overflow =
-                    "hidden";
-
-            }
-
-        }
-
-        /* =====================================================
-           PERMISSIONS
-        ===================================================== */
-
-        function checkPermissions() {
-
-            const granted =
-                localStorage.getItem(
-                    "kimo_android_perms_granted"
-                );
-
-            if (!granted) {
-
-                $("permissionOverlay")
-                    .style
-                    .display = "flex";
-
-            } else {
-
-                updatePermissionUIStates(true);
-
-            }
-
-        }
-
-        function requestAndroidPermissions() {
-
-            /*
-             * Aqui não estamos a pedir uma permissão Android nativa.
-             * O selector de ficheiros do sistema trata do acesso
-             * ao documento escolhido.
-             */
-
-            localStorage.setItem(
-                "kimo_android_perms_granted",
-                "true"
-            );
-
-            updatePermissionUIStates(true);
-
-            $("permissionOverlay")
-                .style
-                .display = "none";
-
-        }
-
-        function updatePermissionUIStates(isGranted) {
-
-            const storage =
-                $("permStorageStatus");
-
-            if (isGranted && storage) {
-
-                storage.textContent =
-                    "Disponível (SAF)";
-
-                storage.style.color =
-                    "var(--success)";
-
-            }
-
-        }
-
-        /* =====================================================
-           SIDEBAR
-        ===================================================== */
-
-        window.toggleSidebar = function () {
-
-            $("sidebar")
-                .classList
-                .toggle("open");
-
-        };
-
-        window.closeSidebar = function () {
-
-            $("sidebar")
-                .classList
-                .remove("open");
-
-        };
-
-        /* =====================================================
-           MODALS
-        ===================================================== */
-
-        window.openModal = function (id) {
-
-            const el = $(id);
-
-            if (!el) return;
-
-            el.style.display = "flex";
-
-            window.closeSidebar();
-
-        };
-
-        window.closeModal = function (id) {
-
-            const el = $(id);
-
-            if (!el) return;
-
-            el.style.display = "none";
-
-        };
-
-        window.saveSettings = function () {
-
-            const provider =
-                $("llmProvider").value;
-
-            localStorage.setItem(
-                "kimo_llm_provider",
-                provider
-            );
-
-            window.closeModal("settingsModal");
-
-        };
-
-        /* =====================================================
-           FILE SELECTION
-        ===================================================== */
-
-        window.handleGGUFFileSelect =
-            function handleGGUFFileSelect(event) {
-
-                const file =
-                    event.target.files?.[0];
-
-                const error =
-                    $("ggufErrorMsg");
-
-                const status =
-                    $("ggufStatusInfo");
-
-                const add =
-                    $("addGgufBtn");
-
-                if (!file) {
-
-                    pendingFile = null;
-
-                    error.style.display =
-                        "none";
-
-                    add.style.display =
-                        "none";
-
-                    status.textContent =
-                        "Nenhum ficheiro selecionado";
-
-                    return;
-
-                }
-
-                const filename =
-                    file.name || "";
-
-                if (
-                    !filename
-                        .toLowerCase()
-                        .endsWith(".gguf")
-                ) {
-
-                    pendingFile = null;
-
-                    error.style.display =
-                        "block";
-
-                    add.style.display =
-                        "none";
-
-                    status.textContent =
-                        "❌ Ficheiro inválido.";
-
-                    event.target.value = "";
-
-                    return;
-
-                }
-
-                /*
-                 * AQUI está a diferença crítica:
-                 *
-                 * pendingFile = file
-                 *
-                 * Não guardamos só o nome.
-                 * Precisamos do File real para passar o GGUF
-                 * para o runtime.
-                 */
-
-                pendingFile = file;
-
-                const mb =
-                    (
-                        file.size /
-                        1024 /
-                        1024
-                    ).toFixed(1);
-
-                error.style.display =
-                    "none";
-
-                status.innerHTML = `
-                    <b>Detectado:</b> ${escapeHtml(filename)}
-                    <br>
-                    <span style="color:var(--text-secondary)">
-                        Tamanho: ${mb} MB
-                    </span>
-                `;
-
-                add.style.display =
-                    "flex";
-
-            };
-
-        /* =====================================================
-           PROGRESS
-        ===================================================== */
-
-        function showProgress(show) {
-
-            $("progressBox")
-                .style
-                .display =
-                show
-                    ? "flex"
-                    : "none";
-
-        }
-
-        function setProgress(percent, text) {
-
-            const safe =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        Number(percent) || 0
-                    )
-                );
-
-            $("progressBar")
-                .style
-                .width =
-                `${safe}%`;
-
-            $("progressPercent")
-                .textContent =
-                `${Math.round(safe)}%`;
-
-            $("progressText")
-                .textContent =
-                text || "A carregar...";
-
-        }
-
-        /* =====================================================
-           CREATE RUNTIME
-        ===================================================== */
-
-        async function createRuntime() {
-
-            setRuntimeStatus(
-                "Runtime: a iniciar..."
-            );
-
-            /*
-             * O Wllama pode usar CPU e/ou aceleração
-             * dependendo do ambiente.
-             */
-
-            wllama =
-                new Wllama(WLLAMA_CONFIG);
-
-            setRuntimeStatus(
-                "Runtime: pronto"
-            );
-
-            return wllama;
-
-        }
-
-        /* =====================================================
-           LOAD GGUF
-        ===================================================== */
-
-        window.addSelectedGgufModel =
-            async function addSelectedGgufModel() {
-
-                if (!pendingFile) {
-
-                    addBotSystemMessage(
-                        "⚠️ Seleciona um ficheiro `.gguf` primeiro."
-                    );
-
-                    return;
-
-                }
-
-                const file =
-                    pendingFile;
-
-                const btn =
-                    $("addGgufBtn");
-
-                btn.disabled =
-                    true;
-
-                showProgress(true);
-
-                setProgress(
-                    5,
-                    "A preparar runtime..."
-                );
-
-                setRuntimeStatus(
-                    "Runtime: a carregar modelo..."
-                );
-
-                try {
-
-                    if (!wllama) {
-                        await createRuntime();
-                    }
-
-                    setProgress(
-                        15,
-                        "A carregar o ficheiro GGUF..."
-                    );
-
-                    /*
-                     * Carregamento REAL do GGUF.
-                     *
-                     * O File é enviado para o runtime.
-                     */
-
-                    await wllama.loadModel(
-                        [file],
-                        {
-                            n_ctx: 4096,
-
-                            /*
-                             * CPU:
-                             * 0
-                             *
-                             * Em ambientes compatíveis podes testar
-                             * mais tarde valores superiores.
-                             */
-                            n_gpu_layers: 0
-                        }
-                    );
-
-                    setProgress(
-                        100,
-                        "Modelo carregado."
-                    );
-
-                    loadedModelName =
-                        file.name;
-
-                    localStorage.setItem(
-                        "kimo_selected_gguf_name",
-                        file.name
-                    );
-
-                    localStorage.setItem(
-                        "kimo_model_loaded",
-                        "true"
-                    );
-
-                    updateModelDropdownOptions();
-
-                    $("ggufStatusInfo")
-                        .innerHTML = `
-                            <span style="color:var(--success)">
-                                ✅ Modelo ativo:
-                            </span>
-                            <b>${escapeHtml(file.name)}</b>
-                        `;
-
-                    setRuntimeStatus(
-                        "Runtime: modelo ativo"
-                    );
-
-                    window.closeModal(
-                        "settingsModal"
-                    );
-
-                    addBotSystemMessage(
-                        `✅ **${file.name}** foi carregado com sucesso.\n\nAgora manda uma mensagem.`
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        "Erro ao carregar GGUF:",
-                        error
-                    );
-
-                    loadedModelName =
-                        null;
-
-                    localStorage.removeItem(
-                        "kimo_model_loaded"
-                    );
-
-                    setRuntimeStatus(
-                        "Runtime: erro"
-                    );
-
-                    setProgress(
-                        0,
-                        "Erro ao carregar."
-                    );
-
-                    $("ggufStatusInfo")
-                        .innerHTML = `
-                            <span style="color:var(--error)">
-                                ❌ Falha ao carregar o GGUF.
-                            </span>
-                            <br>
-                            <small>
-                                ${escapeHtml(
-                                    error?.message ||
-                                    String(error)
-                                )}
-                            </small>
-                        `;
-
-                    addBotSystemMessage(
-                        `❌ **Erro ao carregar o modelo.**\n\n\`${error?.message || error}\``
-                    );
-
-                } finally {
-
-                    btn.disabled =
-                        false;
-
-                }
-
-            };
-
-        /* =====================================================
-           BOT MESSAGE
-        ===================================================== */
-
-        function addBotSystemMessage(text) {
-
-            createBotMessage(text);
-
-        }
-
-        /* =====================================================
-           MODEL DROPDOWN
-        ===================================================== */
-
-        function updateModelDropdownOptions() {
-
-            const select =
-                $("modelSelect");
-
-            select.innerHTML = "";
-
-            if (loadedModelName) {
-
-                const option =
-                    document.createElement("option");
-
-                option.value =
-                    loadedModelName;
-
-                option.textContent =
-                    `[GGUF] ${loadedModelName}`;
-
-                select.appendChild(option);
-
-                return;
-
-            }
-
-            const saved =
-                localStorage.getItem(
-                    "kimo_selected_gguf_name"
-                );
-
-            if (saved) {
-
-                const option =
-                    document.createElement("option");
-
-                option.value = "";
-
-                option.textContent =
-                    `[Selecionar novamente] ${saved}`;
-
-                select.appendChild(option);
-
-                return;
-
-            }
-
-            const option =
-                document.createElement("option");
-
-            option.value =
-                "";
-
-            option.textContent =
-                "Nenhum modelo .gguf carregado";
-
-            select.appendChild(option);
-
-        }
-
-        /* =====================================================
-           SEND MESSAGE
-        ===================================================== */
-
-        window.sendMessage =
-            async function sendMessage() {
-
-                const input =
-                    $("userInput");
-
-                const text =
-                    input.value.trim();
-
-                if (!text) {
-                    return;
-                }
-
-                if (isGenerating) {
-                    return;
-                }
-
-                addUserMessage(text);
-
-                input.value = "";
-
-                /*
-                 * O nome salvo no LocalStorage não basta.
-                 * O modelo TEM de estar em memória no runtime.
-                 */
-
-                if (!wllama || !loadedModelName) {
-
-                    addBotSystemMessage(
-                        "⚠️ Nenhum modelo `.gguf` está carregado nesta sessão.\n\nVai a **Configurações → Selecionar Ficheiro .gguf → Carregar Modelo**."
-                    );
-
-                    return;
-
-                }
-
-                isGenerating =
-                    true;
-
-                $("sendBtn").disabled =
-                    true;
-
-                const botContent =
-                    createBotMessage(
-                        "⏳ A pensar..."
-                    );
-
-                let fullResponse =
-                    "";
-
-                try {
-
-                    chatHistory.push({
-                        role: "user",
-                        content: text
-                    });
-
-                    /*
-                     * Mantemos um histórico limitado para não
-                     * explodir o contexto.
-                     */
-
-                    const recentHistory =
-                        chatHistory.slice(-10);
-
-                    const messages = [
-                        {
-                            role: "system",
-                            content:
-                                "Tu és o Kimo AI. Responde em português. Sê claro, útil e direto."
-                        },
-                        ...recentHistory
-                    ];
-
-                    botContent.innerHTML =
-                        marked.parse(
-                            "⏳ A pensar..."
-                        );
-
-                    /*
-                     * Geração real.
-                     */
-
-                    const response =
-                        await wllama.createChatCompletion(
-                            {
-                                messages,
-
-                                max_tokens: 512,
-
-                                temperature: 0.7,
-
-                                top_k: 40,
-
-                                top_p: 0.9,
-
-                                stream: true
-                            }
-                        );
-
-                    botContent.innerHTML =
-                        "";
-
-                    /*
-                     * Streaming.
-                     */
-
-                    if (
-                        response &&
-                        response[
-                            Symbol.asyncIterator
-                        ]
-                    ) {
-
-                        for await (
-                            const chunk
-                            of response
-                        ) {
-
-                            let piece =
-                                "";
-
-                            /*
-                             * Formato OpenAI-like.
-                             */
-
-                            if (
-                                chunk
-                                    ?.choices
-                                    ?.[0]
-                                    ?.delta
-                                    ?.content
-                            ) {
-
-                                piece =
-                                    chunk
-                                        .choices[0]
-                                        .delta
-                                        .content;
-
-                            }
-
-                            /*
-                             * Fallback.
-                             */
-
-                            else if (
-                                chunk
-                                    ?.choices
-                                    ?.[0]
-                                    ?.message
-                                    ?.content
-                            ) {
-
-                                piece =
-                                    chunk
-                                        .choices[0]
-                                        .message
-                                        .content;
-
-                            }
-
-                            /*
-                             * Alguns runtimes podem devolver
-                             * texto diretamente.
-                             */
-
-                            else if (
-                                typeof chunk ===
-                                "string"
-                            ) {
-
-                                piece =
-                                    chunk;
-
-                            }
-
-                            if (piece) {
-
-                                fullResponse +=
-                                    piece;
-
-                                botContent.innerHTML =
-                                    marked.parse(
-                                        fullResponse
-                                    );
-
-                                scrollChat();
-
-                            }
-
-                        }
-
-                    } else {
-
-                        /*
-                         * Fallback para resposta completa.
-                         */
-
-                        fullResponse =
-                            response
-                                ?.choices
-                                ?.[0]
-                                ?.message
-                                ?.content ||
-                            response
-                                ?.choices
-                                ?.[0]
-                                ?.text ||
-                            "";
-
-                        botContent.innerHTML =
-                            marked.parse(
-                                fullResponse ||
-                                "O modelo não retornou texto."
-                            );
-
-                    }
-
-                    if (!fullResponse.trim()) {
-
-                        fullResponse =
-                            "O modelo terminou sem gerar texto.";
-
-                        botContent.innerHTML =
-                            marked.parse(
-                                fullResponse
-                            );
-
-                    }
-
-                    chatHistory.push({
-                        role: "assistant",
-                        content: fullResponse
-                    });
-
-                } catch (error) {
-
-                    console.error(
-                        "Erro de inferência:",
-                        error
-                    );
-
-                    botContent.innerHTML =
-                        marked.parse(
-                            `❌ **Erro ao gerar resposta.**\n\n\`${error?.message || error}\``
-                        );
-
-                } finally {
-
-                    isGenerating =
-                        false;
-
-                    $("sendBtn").disabled =
-                        false;
-
-                    lucide.createIcons();
-
-                    scrollChat();
-
-                }
-
-            };
-
-        /* =====================================================
-           CLEAR CHAT
-        ===================================================== */
-
-        window.limparChat =
-            function limparChat() {
-
-                chatHistory.length = 0;
-
-                $("chatBox").innerHTML = "";
-
-                addBotSystemMessage(
-                    "Conversa limpa com sucesso!"
-                );
-
-                window.closeSidebar();
-
-            };
-
-        /* =====================================================
-           LOAD SETTINGS
-        ===================================================== */
-
-        function loadSettings() {
-
-            const savedProvider =
-                localStorage.getItem(
-                    "kimo_llm_provider"
-                );
-
-            if (savedProvider) {
-
-                $("llmProvider").value =
-                    savedProvider;
-
-            }
-
-            const savedModel =
-                localStorage.getItem(
-                    "kimo_selected_gguf_name"
-                );
-
-            if (savedModel) {
-
-                $("ggufStatusInfo")
-                    .innerHTML = `
-                        Último modelo selecionado:
-                        <b>${escapeHtml(savedModel)}</b>
-                        <br>
-                        <small>
-                            Seleciona novamente o ficheiro
-                            para carregá-lo nesta sessão.
-                        </small>
-                    `;
-
-            }
-
-            updateModelDropdownOptions();
-
-        }
-
-        /* =====================================================
-           KEYBOARD
-        ===================================================== */
-
-        $("userInput")
-            .addEventListener(
-                "keydown",
-                event => {
-
-                    if (
-                        event.key ===
-                        "Enter"
-                    ) {
-
-                        event.preventDefault();
-
-                        window.sendMessage();
-
-                    }
-
-                }
-            );
-
-        /* =====================================================
-           BOOT
-        ===================================================== */
-
-        window.addEventListener(
-            "load",
-            async () => {
-
-                initLogos();
-
-                lucide.createIcons();
-
-                checkEnvironment();
-
-                checkPermissions();
-
-                $("initialBotMsg")
-                    .innerHTML =
-                    marked.parse(
-                        "Olá! O **Kimo AI** está pronto. Vai a **Configurações** e carrega um modelo `.gguf` para começar."
-                    );
-
-                loadSettings();
-
-                setRuntimeStatus(
-                    "Runtime: aguardando modelo"
-                );
-
-            }
-        );
-
-    </script>
-
+      }
+    }
+  }catch(err){
+    if(stopRequested || err.name === 'AbortError'){ interrupted = true; }
+    else{
+      failed = true;
+      console.error(err);
+      contentEl.innerHTML = `<span style="color:var(--error)">❌ Erro na geração: ${escapeHtml(String(err.message || err))}</span>`;
+    }
+  }
+
+  if(!failed){
+    if(!full.trim()) full = interrupted ? '*(interrompido antes de qualquer token)*' : '*(O modelo devolveu uma resposta vazia)*';
+    state.history.push({ role: 'assistant', content: full });
+    persistHistory();
+    finalizeAssistant(contentEl, full, tokens, t0, interrupted);
+  }
+
+  isGenerating = false; stopRequested = false; genAbort = null;
+  setGeneratingUI(false);
+  scrollToBottom();
+}
+window.sendMessage = sendMessage;
+
+window.stopGeneration = function(){
+  stopRequested = true;
+  if(genAbort){ try{ genAbort.abort(); }catch(e){} }
+};
+
+/* ============ Bindings e init ============ */
+function bindUI(){
+  $('llmProvider').addEventListener('change', e => changeProvider(e.target.value));
+  $('thinkingToggle').addEventListener('change', e => { state.thinking = e.target.checked; saveSettingsToStorage(); });
+  $('sendBtn').addEventListener('click', sendMessage);
+
+  const input = $('userInput');
+  input.addEventListener('input', () => { autoResizeTextarea(input); updateSendState(); });
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      if(!$('sendBtn').disabled) sendMessage();
+    }
+  });
+
+  $('ggufFileInput').addEventListener('change', window.handleGGUFFileSelect);
+
+  $('chatBox').addEventListener('scroll', () => {
+    const box = $('chatBox');
+    autoScroll = box.scrollHeight - box.scrollTop - box.clientHeight < 100;
+  });
+
+  // Delegação: tabs de código + botões copiar + fechar modais
+  document.addEventListener('click', e => {
+    const closer = e.target.closest('[data-close]');
+    if(closer){ closeModal(closer.dataset.close); return; }
+    const tabBtn = e.target.closest('.msg-tab-btn');
+    if(tabBtn){
+      const c = tabBtn.closest('.msg-tabs-container');
+      if(c){
+        c.querySelectorAll('.msg-tab-btn').forEach(b => b.classList.remove('active'));
+        c.querySelectorAll('.msg-pane').forEach(p => p.classList.remove('active'));
+        tabBtn.classList.add('active');
+        const pane = c.querySelector(`.msg-pane[data-pane="${tabBtn.dataset.pane}"]`);
+        if(pane) pane.classList.add('active');
+      }
+      return;
+    }
+    const copyBtn = e.target.closest('.copy-code-btn');
+    if(copyBtn) copyTextToClipboard(codeStore[copyBtn.dataset.codeId] || '', copyBtn);
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if(e.target === ov) ov.style.display = 'none'; });
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+  });
+}
+
+const WELCOME_MD = `Olá! 👋 Sou o **Kimo AI v2.1** e funciono **100% offline**, direto no teu dispositivo.
+
+**Como começar:**
+1. Abre o menu ☰ → **Configurações & Modelos**
+2. Toca em ⬇️ num modelo da lista (ex.: *Qwen2.5 0.5B — ~400 MB*) ou cola o URL de um ficheiro \`.gguf\`
+3. O modelo é descarregado, guardado no aparelho e carregado automaticamente
+
+💡 Em telemóveis, usa modelos **Q4_K_M até ~1.5 GB** para melhor desempenho.`;
+
+function init(){
+  try{ if(window.marked) marked.setOptions({ gfm: true, breaks: true }); }catch(e){}
+  loadSettings();
+  buildCatalog();
+  refreshCachedList();
+  if(!restoreHistory()) $('initialBotMsg').innerHTML = mdToHtml(WELCOME_MD);
+  bindUI();
+  updateModelSelect();
+  updateSendState();
+  refreshIcons();
+  if(navigator.storage?.persist){ try{ navigator.storage.persist(); }catch(e){} }
+}
+init();
+</script>
 </body>
 </html>
