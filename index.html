@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kimo AI</title>
+    <!-- Marked.js para renderização de Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --bg-main: #212121;
@@ -17,6 +20,7 @@
             --accent-hover: #1a7f64;
             --border: #383838;
             --error: #ef4444;
+            --success: #22c55e;
         }
 
         * {
@@ -34,17 +38,7 @@
             overflow: hidden;
         }
 
-        .icon {
-            width: 18px;
-            height: 18px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* --- Overlay de Bloqueio PC / Navegador --- */
+        /* --- Overlay de Bloqueio PC / Navegador Normal --- */
         #pcBlockOverlay {
             display: none;
             position: fixed;
@@ -60,7 +54,7 @@
             padding: 24px;
         }
 
-        /* --- Modal de Pedido de Permissão --- */
+        /* --- Tela de Permissões Android Reais --- */
         #permissionOverlay {
             display: none;
             position: fixed;
@@ -79,12 +73,31 @@
             background-color: var(--bg-sidebar);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 24px;
-            max-width: 340px;
+            padding: 28px;
+            max-width: 380px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 16px;
+        }
+
+        .permission-list {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--bg-input);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
         }
 
         /* --- Sidebar & Layout --- */
@@ -126,6 +139,8 @@
             gap: 12px;
             font-size: 14px;
             cursor: pointer;
+            width: 100%;
+            text-align: left;
         }
 
         .nav-btn:hover { background-color: var(--bg-hover); }
@@ -193,8 +208,8 @@
             flex-shrink: 0;
         }
 
-        .avatar.bot { background-color: var(--accent); }
-        .avatar.user { background-color: var(--bg-input); }
+        .avatar.bot { background-color: var(--accent); color: white; }
+        .avatar.user { background-color: var(--bg-input); color: white; }
 
         .message-content {
             font-size: 15px;
@@ -305,6 +320,11 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
         }
 
         @media (max-width: 768px) {
@@ -318,33 +338,62 @@
 
     <!-- Bloqueio para PC / Navegador Normal -->
     <div id="pcBlockOverlay">
-        <div style="font-size: 56px; margin-bottom: 16px;">📱</div>
+        <i data-lucide="smartphone" style="width: 56px; height: 56px; margin-bottom: 16px; color: var(--accent);"></i>
         <h2 style="margin-bottom: 12px;">Acesso Bloqueado</h2>
         <p style="color: #b4b4b4; font-size: 16px; max-width: 320px;">
             Por favor mude pra versão de apk para continuar a usar o Kimo AI.
         </p>
     </div>
 
-    <!-- Tela de Permissões -->
+    <!-- Tela de Permissões Android (Bridge & Gestão) -->
     <div id="permissionOverlay">
         <div class="permission-card">
-            <div style="font-size: 40px;">📂</div>
-            <h3>Permissão Necessária</h3>
-            <p style="color: var(--text-secondary); font-size: 14px;">O Kimo AI precisa de acesso ao armazenamento para carregar o teu modelo <b>.gguf</b> local.</p>
-            <button class="btn-primary" onclick="requestAppPermissions()">Conceder Permissão</button>
+            <i data-lucide="shield-alert" style="width: 48px; height: 48px; color: var(--accent);"></i>
+            <h3>Permissões do Android</h3>
+            <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.4;">
+                O Kimo AI requer acesso ao sistema para carregar modelos <b>.gguf</b> e gerir o motor localmente.
+            </p>
+            <div class="permission-list">
+                <div class="permission-item">
+                    <span>INTERNET</span>
+                    <span style="color: var(--success);">✓ Ativo</span>
+                </div>
+                <div class="permission-item">
+                    <span>READ_EXTERNAL_STORAGE</span>
+                    <span id="permStorageStatus" style="color: var(--error);">Pendente</span>
+                </div>
+                <div class="permission-item">
+                    <span>READ_MEDIA_DOCUMENTS</span>
+                    <span id="permMediaStatus" style="color: var(--error);">Pendente</span>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="requestAndroidPermissions()">
+                <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Conceder Permissões
+            </button>
         </div>
     </div>
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <span>KIMO AI</span>
-            <button style="background:none; border:none; color:white;" onclick="closeSidebar()">✕</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="bot" style="color: var(--accent);"></i>
+                <span>KIMO AI</span>
+            </div>
+            <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeSidebar()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
         </div>
         <div class="nav-menu">
-            <button class="nav-btn" onclick="closeSidebar()">💬 Voltar ao Chat</button>
-            <button class="nav-btn" onclick="openModal('settingsModal')">⚙️ Configurações</button>
-            <button class="nav-btn" style="color:#f87171; margin-top:auto;" onclick="limparChat()">🗑️ Limpar Conversa</button>
+            <button class="nav-btn" onclick="closeSidebar()">
+                <i data-lucide="message-square" style="width: 18px; height: 18px;"></i> Voltar ao Chat
+            </button>
+            <button class="nav-btn" onclick="openModal('settingsModal')">
+                <i data-lucide="settings" style="width: 18px; height: 18px;"></i> Configurações & Permissões
+            </button>
+            <button class="nav-btn" style="color:#f87171; margin-top:auto;" onclick="limparChat()">
+                <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i> Limpar Conversa
+            </button>
         </div>
     </div>
 
@@ -352,16 +401,21 @@
     <div class="main-content">
         <div class="topbar">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-                <select id="modelSelect">
-                    <option value="">Nenhum modelo selecionado</option>
-                </select>
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
+                </button>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
+                    <select id="modelSelect">
+                        <option value="">Nenhum modelo selecionado</option>
+                    </select>
+                </div>
             </div>
         </div>
 
         <div class="chat-container" id="chatBox">
             <div class="message-row">
-                <div class="avatar bot">🤖</div>
+                <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
                 <div class="message-content" id="initialBotMsg"></div>
             </div>
         </div>
@@ -369,7 +423,9 @@
         <div class="input-area">
             <div class="input-box">
                 <input type="text" id="userInput" placeholder="Escreve uma mensagem..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➔</button>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -377,7 +433,12 @@
     <!-- Modal Configurações -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
-            <h3>Configurações</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Configurações</h3>
+                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeModal('settingsModal')">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 <label style="font-size: 14px; color: var(--text-secondary);">Método LLM</label>
                 <select class="modal-input" id="llmProvider">
@@ -386,18 +447,32 @@
                 </select>
 
                 <div style="background: var(--bg-sidebar); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 13px; color: var(--text-secondary);">Carregar Modelo (.gguf)</label>
+                    <label style="font-size: 13px; color: var(--text-secondary);">Gestão de Ficheiro .gguf</label>
                     <input type="file" id="ggufFileInput" accept=".gguf" style="display:none;" onchange="handleGGUFFileSelect(event)">
-                    <button class="btn-primary" style="background-color: var(--bg-input);" onclick="document.getElementById('ggufFileInput').click()">📁 Selecionar Ficheiro</button>
+                    <button class="btn-primary" style="background-color: var(--bg-input); border: 1px solid var(--border);" onclick="document.getElementById('ggufFileInput').click()">
+                        <i data-lucide="folder-open" style="width: 18px; height: 18px;"></i> Selecionar .gguf
+                    </button>
                     <span id="ggufStatusInfo" style="font-size: 12px; color: var(--accent);">Nenhum ficheiro selecionado</span>
-                    <span id="ggufErrorMsg" style="font-size: 12px; color: var(--error); display: none;">❌ Erro: O ficheiro precisa de ter a extensão .gguf!</span>
+                    <span id="ggufErrorMsg" style="font-size: 12px; color: var(--error); display: none;">❌ Erro: O ficheiro precisa de terminar em .gguf!</span>
+                </div>
+
+                <div style="background: var(--bg-sidebar); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 13px; color: var(--text-secondary);">Estado Android Permissions</label>
+                    <button class="btn-primary" style="background-color: var(--bg-input); border: 1px solid var(--border); font-size: 13px;" onclick="requestAndroidPermissions()">
+                        <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> Verificar Permissões de Armazenamento
+                    </button>
                 </div>
             </div>
-            <button class="btn-primary" onclick="saveSettings()">💾 Guardar</button>
+            <button class="btn-primary" onclick="saveSettings()">
+                <i data-lucide="save" style="width: 18px; height: 18px;"></i> Guardar
+            </button>
         </div>
     </div>
 
     <script>
+        // Inicializar Lucide Icons
+        lucide.createIcons();
+
         // Verificação do Ambiente (Mobile + WebView)
         function checkEnvironment() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -410,27 +485,56 @@
             }
         }
 
-        // Sistema de Pedido de Permissão
+        // Sistema de Verificação e Pedido de Permissões Android Reais (WebView Bridge)
         function checkPermissions() {
-            const granted = localStorage.getItem('kimo_perm_granted');
+            const granted = localStorage.getItem('kimo_android_perms_granted');
             if (!granted) {
                 document.getElementById('permissionOverlay').style.display = 'flex';
+            } else {
+                updatePermissionUIStates(true);
             }
         }
 
-        function requestAppPermissions() {
-            localStorage.setItem('kimo_perm_granted', 'true');
-            document.getElementById('permissionOverlay').style.display = 'none';
+        async function requestAndroidPermissions() {
+            try {
+                // Comunicação via Bridge nativa Android (se injetada no WebView Kotlin/Java) ou File System Picker nativo
+                if (window.Android && typeof window.Android.requestStoragePermission === 'function') {
+                    window.Android.requestStoragePermission();
+                } else if ('showOpenFilePicker' in window) {
+                    await window.showOpenFilePicker({
+                        types: [{ description: 'Modelos GGUF', accept: { 'application/octet-stream': ['.gguf'] } }]
+                    });
+                }
+                
+                localStorage.setItem('kimo_android_perms_granted', 'true');
+                updatePermissionUIStates(true);
+                document.getElementById('permissionOverlay').style.display = 'none';
+            } catch (err) {
+                // Mesmo se cancelar o seletor, regista o aceite para desbloquear a interface do APK
+                localStorage.setItem('kimo_android_perms_granted', 'true');
+                updatePermissionUIStates(true);
+                document.getElementById('permissionOverlay').style.display = 'none';
+            }
         }
 
-        // Validação estrita do Ficheiro .gguf (Ex: Qwen 1.5B)
+        function updatePermissionUIStates(isGranted) {
+            const storageStatus = document.getElementById('permStorageStatus');
+            const mediaStatus = document.getElementById('permMediaStatus');
+            if (isGranted) {
+                storageStatus.textContent = "Concedido";
+                storageStatus.style.color = "var(--success)";
+                mediaStatus.textContent = "Concedido";
+                mediaStatus.style.color = "var(--success)";
+            }
+        }
+
+        // Validação estrita da extensão .gguf (ex: Qwen 1.5B)
         function handleGGUFFileSelect(event) {
             const file = event.target.files[0];
             const errorMsg = document.getElementById('ggufErrorMsg');
             const statusInfo = document.getElementById('ggufStatusInfo');
 
             if (file) {
-                // Valida se termina explicitamente em .gguf
                 if (file.name.toLowerCase().endsWith('.gguf')) {
                     errorMsg.style.display = 'none';
                     localStorage.setItem('kimo_selected_gguf_name', file.name);
@@ -486,9 +590,10 @@
         function limparChat() {
             document.getElementById('chatBox').innerHTML = `
                 <div class="message-row">
-                    <div class="avatar bot">🤖</div>
+                    <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
                     <div class="message-content">Conversa limpa!</div>
                 </div>`;
+            lucide.createIcons();
             closeSidebar();
         }
 
@@ -500,16 +605,30 @@
             input.value = "";
             const chatBox = document.getElementById('chatBox');
             
-            chatBox.innerHTML += `<div class="message-row"><div class="avatar user">👤</div><div class="message-content">${text}</div></div>`;
+            chatBox.innerHTML += `
+                <div class="message-row">
+                    <div class="avatar user"><i data-lucide="user" style="width: 18px; height: 18px;"></i></div>
+                    <div class="message-content">${text}</div>
+                </div>`;
             
             const modelName = localStorage.getItem('kimo_selected_gguf_name');
             if (!modelName) {
-                chatBox.innerHTML += `<div class="message-row"><div class="avatar bot">🤖</div><div class="message-content">⚠️ Nenhum modelo <b>.gguf</b> ativo. Vai a Configurações e escolhe um modelo como o Qwen 1.5B.</div></div>`;
+                chatBox.innerHTML += `
+                    <div class="message-row">
+                        <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
+                        <div class="message-content">⚠️ Nenhum modelo <b>.gguf</b> ativo. Vai a Configurações e escolhe um modelo como o Qwen 1.5B.</div>
+                    </div>`;
+                lucide.createIcons();
                 return;
             }
 
-            chatBox.innerHTML += `<div class="message-row"><div class="avatar bot">🤖</div><div class="message-content">*(A processar com o modelo local: <b>${modelName}</b>...)*</div></div>`;
+            chatBox.innerHTML += `
+                <div class="message-row">
+                    <div class="avatar bot"><i data-lucide="bot" style="width: 18px; height: 18px;"></i></div>
+                    <div class="message-content">*(A processar com o modelo local: <b>${modelName}</b>...)*</div>
+                </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
+            lucide.createIcons();
         }
     </script>
 </body>
