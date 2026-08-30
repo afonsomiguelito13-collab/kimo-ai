@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Update log · Kimo</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .doc { max-width: 760px; margin: 0 auto; padding: 26px 20px 90px; }
+  .doc-top { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .doc-back {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim);
+    font-size: 13px; text-decoration: none; background: var(--bg-elev);
+  }
+  .doc-back:hover { color: var(--text); border-color: var(--text-faint); }
+  .doc h1 { font-family: var(--serif); font-size: 30px; font-weight: 400; margin: 0 0 6px; }
+  .doc .lede { color: var(--text-dim); font-size: 14.5px; line-height: 1.65; margin: 0 0 30px; }
+  .rel { border-left: 2px solid var(--border); padding: 0 0 26px 20px; position: relative; }
+  .rel:last-child { padding-bottom: 0; }
+  .rel::before {
+    content: ""; position: absolute; left: -6px; top: 5px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--border);
+  }
+  .rel.now::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .rel-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 3px; }
+  .rel-v { font-size: 16px; font-weight: 600; }
+  .rel-d { font-size: 12.5px; color: var(--text-faint); }
+  .rel-tag {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; padding: 2px 8px;
+    border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .rel-s { font-size: 13.5px; color: var(--text-dim); margin: 0 0 11px; line-height: 1.6; }
+  .rel ul { margin: 0; padding-left: 17px; }
+  .rel li { font-size: 14px; line-height: 1.72; margin-bottom: 7px; }
+  .rel li b { font-weight: 600; }
+  .k {
+    font-family: var(--mono); font-size: 12.5px; background: var(--bg-elev-2);
+    padding: 1px 5px; border-radius: 5px;
+  }
+  .why {
+    margin-top: 9px; padding: 10px 13px; border-radius: var(--radius-sm);
+    background: var(--bg-elev); border: 1px solid var(--border-soft);
+    font-size: 13px; color: var(--text-dim); line-height: 1.65;
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-top">
+    <a class="doc-back" href="/">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to chat
+    </a>
+  </div>
+
+  <h1>Update log</h1>
+  <p class="lede">
+    What changed, and why. Newest first. Your chats, key and settings are never
+    touched by an update.
+  </p>
+
+  <div class="rel now">
+    <div class="rel-h">
+      <span class="rel-v">Novo seletor de modelos</span>
+      <span class="rel-tag">Current</span>
+      <span class="rel-d">30 Aug 2026</span>
+    </div>
+    <p class="rel-s">Dois painéis: lista à esquerda, detalhes do modelo à direita.</p>
+    <ul>
+      <li>O painel mostra contexto, saída máxima, preço, acesso e recursos do modelo em foco.</li>
+      <li><b>O controle de esforço agora fica junto do modelo</b>, com os níveis lidos do catálogo ao vivo — cada modelo tem os seus.</li>
+      <li>No celular vira duas páginas: tocar num modelo abre os detalhes, o X volta.</li>
+      <li>O botão de raciocínio abre o mesmo painel, em vez de um modal separado.</li>
+    </ul>
+  </div>
+
+  <div class="rel">
+    <div class="rel-h">
+      <span class="rel-v">Web search</span>
+      <span class="rel-d">30 Aug 2026</span>
+    </div>
+    <p class="rel-s">The model can look things up before answering.</p>
+    <ul>
+      <li><b>Magnifier button</b> in the composer toggles it on and off. The setting is remembered.</li>
+      <li>Results are fetched first, then handed to the model as context, which cites them as <span class="k">[1]</span>, <span class="k">[2]</span>.</li>
+      <li>Sources collapse into a pill under your message, with links and snippets.</li>
+      <li><b>DuckDuckGo first, Wikipedia as fallback.</b> Searching never blocks the answer — if it fails the question is still asked.</li>
+      <li><b>Fixed:</b> a long model name pushed the send button off the right edge on phones. The pill now shrinks and ellipsises instead.</li>
+      <li><b>Five more vendor logos:</b> Claude, Gemini, Qwen, Kimi and Mistral. Nine vendors now carry a real mark, covering 86 of the 103 models.</li>
+    </ul>
+    <div class="why">
+      <b>Why two sources:</b> DuckDuckGo's key-free API only answers topic and
+      definition queries — ask it "who won euro 2024" and every field is empty.
+      Their HTML endpoints would cover the rest but now return an anti-bot
+      challenge, so Wikipedia fills the gap instead.
+    </div>
+  </div>
+
+  <div class="rel">
+    <div class="rel-h">
+      <span class="rel-v">Key diagnostics</span>
+      <span class="rel-d">30 Aug 2026</span>
+    </div>
+    <p class="rel-s">Made authentication failures explain themselves.</p>
+    <ul>
+      <li><b>Test key button</b> in Settings. Makes a real one-token call and reports whether the key actually works.</li>
+      <li><b>Clear saved key</b> button, to drop a browser-stored key and fall back to <span class="k">.env</span>.</li>
+      <li>Settings now says <b>which</b> key is in use, and warns when a key saved in the browser is overriding your <span class="k">.env</span>.</li>
+      <li>Detects damaged pastes: a leading <span class="k">Bearer</span>, wrapping quotes, embedded newlines, invisible characters, wrong prefix, truncation.</li>
+      <li>A well-formed but rejected key now says so plainly, with a link to issue a new one.</li>
+      <li>Distinguishes a key you just typed from one already saved.</li>
+      <li>This update log and a privacy &amp; terms page, linked from the sidebar.</li>
+    </ul>
+    <div class="why">
+      <b>Why:</b> xKiro's model catalog is public — it returns the full list even
+      with no key at all. Models appearing was never proof of a valid key, which
+      made a 401 look like it came from nowhere.
+    </div>
+  </div>
+
+  <div class="rel">
+    <div class="rel-h">
+      <span class="rel-v">Safe updates</span>
+      <span class="rel-d">30 Aug 2026</span>
+    </div>
+    <p class="rel-s">An updater that cannot leave you with a broken install.</p>
+    <ul>
+      <li><span class="k">update.sh</span>, plus an <span class="k">kimo-update</span> shortcut.</li>
+      <li>Downloads and fully verifies the new build <b>before</b> deleting anything, and restores the old one if the swap fails.</li>
+      <li>Removes the old folder rather than unzipping over it, so files deleted upstream really disappear.</li>
+      <li>Keeps your <span class="k">.env</span> across the swap.</li>
+      <li>Refuses to downgrade, and only stops <b>this</b> app's server, never unrelated ones.</li>
+    </ul>
+    <div class="why">
+      <b>Why:</b> <span class="k">unzip -o</span> overwrites what it finds but leaves
+      deleted files behind, and a stale file can shadow a new one.
+    </div>
+  </div>
+
+  <div class="rel">
+    <div class="rel-h">
+      <span class="rel-v">Vendor logos</span>
+      <span class="rel-d">30 Aug 2026</span>
+    </div>
+    <ul>
+      <li>Real marks for GLM, OpenAI, DeepSeek and Grok in the picker and on replies.</li>
+      <li>Grok's mark is pure black, so it sits on a white plate to stay visible on the dark theme.</li>
+      <li>Vendors without a logo still get a coloured letter tile.</li>
+    </ul>
+  </div>
+
+  <div class="rel">
+    <div class="rel-h">
+      <span class="rel-v">Spend and access</span>
+      <span class="rel-d">29 Aug 2026</span>
+    </div>
+    <ul>
+      <li>Credit budget with a live remaining figure, counted from real token usage.</li>
+      <li><b>Show only free models</b>, to hide everything a free account gets a 403 on.</li>
+      <li>Clearer 403 errors that name free alternatives from the live catalog.</li>
+      <li>Per-model reasoning controls, read from the catalog rather than guessed.</li>
+    </ul>
+  </div>
+
+  <div class="rel">
+    <div class="rel-h">
+      <span class="rel-v">First release</span>
+      <span class="rel-d">29 Aug 2026</span>
+    </div>
+    <ul>
+      <li>Streaming chat over the xKiro gateway, defaulting to GLM-5.3 Flash.</li>
+      <li>Multi-model picker across the full catalog.</li>
+      <li>Markdown rendering with syntax highlighting and copy buttons.</li>
+      <li>Threads, image attachments, temporary chats, light and dark themes.</li>
+      <li>Your key stays on the server; the browser never talks to xKiro directly.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
