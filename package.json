@@ -1,0 +1,23 @@
+{
+  "name": "kimo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kimo \u2014 a full chatbot on the xKiro gateway. GLM-5.3 Flash plus 100+ models, streaming, vision and reasoning control. Zero dependencies.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "kimo",
+    "xkiro",
+    "chatbot",
+    "glm",
+    "llm",
+    "streaming"
+  ],
+  "license": "MIT"
+}
