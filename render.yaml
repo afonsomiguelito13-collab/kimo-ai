@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: kimo
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Cole sua chave sk-xt-... no painel do Render.
+      # sync:false = o Render pergunta o valor no deploy e nao guarda no git.
+      - key: XKIRO_API_KEY
+        sync: false
