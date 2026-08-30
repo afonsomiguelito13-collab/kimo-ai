@@ -1,16 +1,22 @@
 # Kimo
 
+> ### ⚠️ Versão alpha
+> Isto é uma **alpha**: funciona, mas está em desenvolvimento ativo. Espere
+> arestas, mudanças sem aviso e algum texto ainda misturado entre português e
+> inglês. Não recomendo depender disto para nada sério ainda.
+
 Um chatbot completo sobre o gateway [xKiro](https://xkiro.com) — GLM-5.3 Flash
 por padrão, mais de 100 modelos disponíveis, streaming token a token, visão,
 controle de raciocínio e busca na web. **Zero dependências**: só Node 18+.
 
+![alpha](https://img.shields.io/badge/status-alpha-orange)
 ![sem dependências](https://img.shields.io/badge/deps-0-brightgreen)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-blue)
-![licença](https://img.shields.io/badge/license-MIT-lightgrey)
+![licença](https://img.shields.io/badge/license-Apache--2.0-lightgrey)
 
 ---
 
-## O que tem
+## O que já funciona
 
 - **105 modelos** — OpenAI, Anthropic, Google, DeepSeek, Qwen, Z-AI, Moonshot,
   xAI, Mistral e outros, com logo, preço e limites de cada um
@@ -24,16 +30,31 @@ controle de raciocínio e busca na web. **Zero dependências**: só Node 18+.
 - **Busca na web** opcional, com citações numeradas
 - **Markdown** com destaque de código e botão de copiar por bloco
 - **Controle de gastos** — orçamento e contador de consumo estimado
-- **Conversas salvas** no navegador, sem conta e sem servidor nosso
+- **Conversas salvas** no navegador, sem conta e sem servidor próprio
+
+---
+
+## O que ainda está cru
+
+Sendo honesto sobre o estado alpha:
+
+- **Interface bilíngue por acidente** — o seletor de modelos está em português, o
+  resto da interface ainda em inglês. Vai ser unificado.
+- **5 fabricantes sem logo** — minimax, nvidia, xiaomi, tencent e meta aparecem
+  como quadradinho colorido com a inicial. Funciona, mas destoa.
+- **Sem testes automatizados** — a verificação até agora é manual.
+- **Sem exportar conversa inteira** — dá pra copiar mensagem por mensagem.
+- **O orçamento é uma estimativa** — calculado no cliente a partir da tabela de
+  preços. O valor real é o do painel da xKiro.
 
 ---
 
 ## Rodar localmente
 
 ```bash
-git clone [https://github.com/SEU_USUARIO/kimo.git] ~/kimo
+git clone https://github.com/afonsomiguelito13-collab/kimo-ai.git ~/kimo
 cd ~/kimo
-echo 'XKIRO_API_KEY=sk-xt-suachave' > .env
+cp .env.example .env      # depois cole sua chave dentro
 node server.js
 ```
 
@@ -47,7 +68,7 @@ vez de usar o `.env`; nesse caso ela fica no navegador.
 
 ```bash
 pkg install nodejs git -y
-git clone https://github.com/SEU_USUARIO/kimo.git ~/kimo
+git clone https://github.com/afonsomiguelito13-collab/kimo-ai.git ~/kimo
 cd ~/kimo && node server.js
 ```
 
@@ -61,9 +82,13 @@ para o Android não matar o processo em segundo plano.
 Veja **[DEPLOY.md](DEPLOY.md)** para o passo a passo no Render.
 
 Um aviso que economiza tempo: **não funciona como site estático**. A API da xKiro
-não envia headers CORS, então o navegador é bloqueado ao tentar chamá-la direto.
-O `server.js` é a ponte que resolve isso — e é ele que anexa a chave, que assim
-nunca chega ao navegador.
+não envia headers CORS, então o navegador é bloqueado ao tentar chamá-la direto —
+GitHub Pages, Netlify estático e afins não servem. O `server.js` é a ponte que
+resolve isso, e é ele que anexa a chave, que assim nunca chega ao navegador.
+
+Se você publicar com a chave no servidor, **quem abrir a URL usa o seu saldo**.
+Para compartilhar, deixe `XKIRO_API_KEY` vazia: o app pede a chave em Ajustes e
+cada pessoa usa a sua.
 
 ---
 
@@ -82,7 +107,7 @@ nunca chega ao navegador.
 
 ```
 navegador  ──►  server.js  ──►  api.xkiro.com
-           ◄──  (SSE)     ◄──
+           ◄──  (SSE)      ◄──
 ```
 
 O servidor é um único arquivo sem dependências. Ele serve os estáticos e expõe
@@ -101,7 +126,7 @@ Sobre o `/api/chat`, vale registrar o porquê de algumas decisões:
   em 95 segundos, o que quebra respostas longas.
 - **Injeta `stream_options.include_usage`**, senão o consumo de tokens nunca chega.
 - **Omite `reasoning_effort` quando é `"auto"`** — porque na xKiro omitir o campo
-  não é o mesmo que enviar `"none"`; omitir usa o padrão do modelo, `"none"`
+  não é o mesmo que enviar `"none"`: omitir usa o padrão do modelo, `"none"`
   desliga de fato.
 - **Aborta o upstream** quando o cliente desconecta, para não continuar pagando.
 - **Rejeita IDs sem prefixo de fabricante** com 400, já que a xKiro devolveria um
@@ -121,4 +146,4 @@ Detalhes em `/policies.html` no app rodando.
 
 ## Licença
 
-MIT.
+Apache 2.0.
