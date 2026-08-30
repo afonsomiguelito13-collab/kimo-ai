@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kimo — GLM-5.3 Flash &amp; 100+ models</title>
+<meta name="description" content="A full chatbot on the xKiro gateway: GLM-5.3 Flash, GPT, Claude, Gemini, DeepSeek, Qwen and more.">
+<meta name="theme-color" content="#262624">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23262624'/><g stroke='%23D97757' stroke-width='7' stroke-linecap='round'><path d='M50 18v64M18 50h64M27 27l46 46M73 27L27 73'/></g></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- reusable sunburst mark -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="burst" viewBox="0 0 100 100">
+    <g stroke="currentColor" stroke-width="6.5" stroke-linecap="round">
+      <path d="M50 14v72M14 50h72"/>
+      <path d="M24.6 24.6l50.8 50.8M75.4 24.6L24.6 75.4"/>
+      <path d="M31 17l38 66M69 17L31 83"/>
+      <path d="M17 31l66 38M17 69l66-38"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="app">
+  <!-- ============================================================ sidebar -->
+  <aside class="sidebar collapsed" id="sidebar">
+    <div class="side-head">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 100 100"><use href="#burst"/></svg>
+        <div>Kimo<small>100+ modelos · via xKiro</small></div>
+      </div>
+    </div>
+
+    <button class="new-chat" id="newChatBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      New chat
+    </button>
+
+    <div class="side-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" id="threadSearch" placeholder="Search chats" autocomplete="off">
+    </div>
+
+    <div class="thread-list" id="threadList"></div>
+
+    <div class="side-foot">
+      <button id="themeBtn" title="Toggle theme">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <span id="themeLabel">Light</span>
+      </button>
+      <button id="settingsBtn" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.4-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        Settings
+      </button>
+      <div class="side-links">
+        <a href="/changelog.html">Update log</a>
+        <span aria-hidden="true">·</span>
+        <a href="/policies.html">Privacy &amp; terms</a>
+      </div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- =============================================================== main -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="menuBtn" title="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h14"/></svg>
+      </button>
+
+      <div class="topbar-spacer"></div>
+      <span class="pill" id="ctxPill"></span>
+
+      <button class="icon-btn" id="incognitoBtn" title="Temporary chat — not saved to this browser">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+          <path d="M4 20V10a8 8 0 0 1 16 0v10l-2.7-2-2.6 2-2.7-2-2.7 2-2.6-2z"/>
+          <circle cx="9" cy="10.5" r="1.15" fill="currentColor" stroke="none"/>
+          <circle cx="15" cy="10.5" r="1.15" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="scroll-area" id="scrollArea">
+      <div class="messages" id="messages"></div>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <div class="attach-strip" id="attachStrip"></div>
+
+        <!-- model menu opens upward, out of the composer -->
+        <div class="model-menu" id="modelMenu">
+          <div class="mm-left">
+          <div class="model-menu-search">
+            <input type="text" id="modelSearch" placeholder="Buscar modelos…" autocomplete="off">
+          </div>
+          <div class="model-filters" id="modelFilters">
+            <button class="chip on" data-filter="all">All</button>
+            <button class="chip" data-filter="free">Free</button>
+            <button class="chip" data-filter="vision">Vision</button>
+            <button class="chip" data-filter="reasoning">Reasoning</button>
+            <button class="chip" data-filter="z-ai">GLM</button>
+            <button class="chip" data-filter="cheap">Cheapest</button>
+          </div>
+          <div class="model-list" id="modelList"></div>
+          </div>
+          <div class="mm-right" id="mmDetail"></div>
+          <button class="mm-close" id="mmClose" aria-label="Fechar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="input-box">
+          <textarea id="input" rows="1" placeholder="Chat with GLM…"></textarea>
+          <div class="input-row">
+            <button class="round-btn" id="attachBtn" title="Attach image">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <input type="file" id="fileInput" accept="image/*" multiple hidden>
+
+            <button class="model-pill" id="modelBtn" title="Switch model">
+              <span class="model-pill-avatar" id="modelAvatar"></span>
+              <span class="model-pill-name" id="modelName">Loading…</span>
+            </button>
+
+            <button class="round-btn" id="searchBtn" title="Search the web before answering">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            </button>
+            <button class="round-btn" id="thinkBtn" title="Reasoning depth">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 2a7 7 0 0 0-4 12.7V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 2zM9 22h6"/></svg>
+            </button>
+
+            <div class="input-spacer"></div>
+
+            <button class="send-btn" id="sendBtn" disabled title="Send">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="composer-hint">Enter to send · Shift+Enter for newline · streamed through the xKiro gateway</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================== modals -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Settings</h2>
+      <button class="icon-btn" data-close-modal>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="apiKeyInput">xKiro API key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-xt-…" autocomplete="off" spellcheck="false">
+        <p class="desc" id="keyStatus"></p>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+          <button class="btn ghost" id="testKeyBtn" style="padding:6px 12px;font-size:12.5px;border:1px solid var(--border)">Test key</button>
+          <button class="btn ghost" id="clearKeyBtn" style="padding:6px 12px;font-size:12.5px;border:1px solid var(--border)">Clear saved key</button>
+          <span class="desc" id="keyTestResult" style="margin:0"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="budgetInput">Credit budget (USD)</label>
+        <input type="number" id="budgetInput" min="0" step="0.5" placeholder="5">
+        <p class="desc">
+          Shows what is left in the top bar, counted from actual token usage.
+          A local estimate for your own awareness — xKiro's dashboard is the real ledger.
+          <span id="spentNote" style="display:block;margin-top:5px;color:var(--text-dim)"></span>
+        </p>
+        <button class="btn ghost" id="resetSpendBtn" style="margin-top:8px;padding:6px 12px;font-size:12.5px;border:1px solid var(--border)">Reset spend counter</button>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:9px;cursor:pointer">
+          <input type="checkbox" id="freeOnlyInput" style="width:auto;accent-color:var(--accent);transform:scale(1.15)">
+          Show only free models
+        </label>
+        <p class="desc">A free xKiro account gets a 403 on paid models. Tick this to hide everything your account cannot call.</p>
+      </div>
+      <div class="field">
+        <label for="systemInput">System prompt</label>
+        <textarea id="systemInput" placeholder="You are a helpful assistant."></textarea>
+      </div>
+      <div class="field">
+        <label for="tempInput">Temperature</label>
+        <div class="range-row">
+          <input type="range" id="tempInput" min="0" max="2" step="0.05">
+          <span class="range-val" id="tempVal"></span>
+        </div>
+        <p class="desc">Ignored while reasoning is active — reasoning models reject it.</p>
+      </div>
+      <div class="field">
+        <label for="maxTokInput">Max output tokens</label>
+        <input type="number" id="maxTokInput" min="16" step="256" placeholder="Model default">
+        <p class="desc">Left blank the model decides. Clamped down if above the model's ceiling.</p>
+      </div>
+      <div class="field">
+        <label for="historyInput">History window (messages sent)</label>
+        <input type="number" id="historyInput" min="2" max="200" step="2">
+        <p class="desc">How many recent turns travel with each request.</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="wipeBtn">Delete all chats</button>
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" id="saveSettings">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="thinkOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <h2>Reasoning depth</h2>
+      <button class="icon-btn" data-close-modal>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="thinkBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="markdown.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
