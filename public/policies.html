@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy &amp; terms · Kimo</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .doc { max-width: 760px; margin: 0 auto; padding: 26px 20px 90px; }
+  .doc-top { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .doc-back {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim);
+    font-size: 13px; text-decoration: none; background: var(--bg-elev);
+  }
+  .doc-back:hover { color: var(--text); border-color: var(--text-faint); }
+  .doc h1 { font-family: var(--serif); font-size: 30px; font-weight: 400; margin: 0 0 6px; }
+  .doc h2 {
+    font-size: 17px; font-weight: 600; margin: 34px 0 10px;
+    padding-top: 20px; border-top: 1px solid var(--border-soft);
+  }
+  .doc h2:first-of-type { border-top: 0; padding-top: 0; }
+  .doc h3 { font-size: 14.5px; font-weight: 600; margin: 20px 0 7px; }
+  .doc p, .doc li { font-size: 14px; line-height: 1.74; color: var(--text-dim); }
+  .doc p { margin: 0 0 12px; }
+  .doc ul { margin: 0 0 12px; padding-left: 18px; }
+  .doc li { margin-bottom: 6px; }
+  .doc strong { color: var(--text); font-weight: 600; }
+  .doc a { color: var(--accent); }
+  .lede { font-size: 14.5px; margin-bottom: 26px !important; }
+  .k {
+    font-family: var(--mono); font-size: 12.5px; background: var(--bg-elev-2);
+    padding: 1px 5px; border-radius: 5px; color: var(--text);
+  }
+  .card {
+    padding: 15px 17px; border-radius: var(--radius); background: var(--bg-elev);
+    border: 1px solid var(--border-soft); margin: 0 0 15px;
+  }
+  .card.warn { border-color: rgba(217,167,87,.4); background: rgba(217,167,87,.07); }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+  th { color: var(--text); font-weight: 600; font-size: 12.5px; }
+  td { color: var(--text-dim); line-height: 1.6; }
+  .yes { color: var(--ok); font-weight: 600; }
+  .no { color: var(--text-faint); }
+  .upd { font-size: 12.5px; color: var(--text-faint); margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-top">
+    <a class="doc-back" href="/">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to chat
+    </a>
+  </div>
+
+  <h1>Privacy &amp; terms</h1>
+  <p class="lede">
+    This app runs on your own device and talks to one company: xKiro. There is
+    no account here, no server of ours, and nothing is collected about you.
+  </p>
+
+  <h2>Who is involved</h2>
+  <p>Three parties, and it helps to keep them apart:</p>
+  <ul>
+    <li><strong>This app</strong> — the files on your device. It stores things locally and forwards your messages. It has no backend of its own.</li>
+    <li><strong>xKiro</strong> — the API gateway that runs the models. Your messages go here. Their policies govern what happens next.</li>
+    <li><strong>The model vendors</strong> — OpenAI, Anthropic, DeepSeek and others, reached through xKiro rather than directly by this app.</li>
+  </ul>
+
+  <h2>What is stored, and where</h2>
+  <p>Everything below lives in <strong>your browser's local storage</strong>, on your device. None of it is uploaded anywhere.</p>
+  <table>
+    <tr><th>Stored</th><th>What it is</th></tr>
+    <tr><td>Chats</td><td>Your threads and their messages</td></tr>
+    <tr><td>API key</td><td>Only if you paste one into Settings</td></tr>
+    <tr><td>Preferences</td><td>Model, theme, system prompt, temperature, token and history limits</td></tr>
+    <tr><td>Budget</td><td>Your credit figure and the running spend estimate</td></tr>
+  </table>
+  <p>
+    Clearing your browser data, or using <strong>Delete all chats</strong> in
+    Settings, erases it permanently. There is no backup and no sync — chats do
+    not follow you to another device.
+  </p>
+
+  <h2>What this app does not do</h2>
+  <table>
+    <tr><td>Analytics or telemetry</td><td class="no">None</td></tr>
+    <tr><td>Cookies</td><td class="no">None</td></tr>
+    <tr><td>Third-party scripts or fonts</td><td class="no">None</td></tr>
+    <tr><td>Advertising or profiling</td><td class="no">None</td></tr>
+    <tr><td>Accounts or sign-in</td><td class="no">None</td></tr>
+    <tr><td>Any server run by us</td><td class="no">None</td></tr>
+  </table>
+  <p>
+    The only outbound requests are to <span class="k">api.xkiro.com</span>. You
+    can confirm this yourself — the source is on your device and the network
+    calls are in <span class="k">server.js</span>.
+  </p>
+
+  <h2>Your API key</h2>
+  <div class="card">
+    <p>The key is kept out of the browser wherever possible:</p>
+    <ul>
+      <li>A key in <span class="k">.env</span> stays on the server side and is never sent to the page.</li>
+      <li>A key pasted into Settings is stored in that browser only, and travels to your local server with each request.</li>
+      <li>Either way, the browser never calls xKiro directly — the key is attached server-side.</li>
+      <li>The <strong>Test key</strong> result only ever shows a masked fragment, never the whole key.</li>
+    </ul>
+  </div>
+  <div class="card warn">
+    <p>
+      <strong>A key in Settings overrides the one in <span class="k">.env</span>.</strong>
+      Anyone with access to your unlocked device can reach that browser's stored
+      key. Prefer <span class="k">.env</span> if that matters to you, and revoke
+      a key you suspect is exposed at
+      <a href="https://xkiro.com/dashboard/api/keys" target="_blank" rel="noopener">xkiro.com/dashboard/api/keys</a>.
+    </p>
+  </div>
+
+  <h2>What gets sent when you chat</h2>
+  <p>Each message sends to xKiro: the recent messages in that thread (as many as your history window allows), your system prompt, any images you attach, and the model and sampling settings. Older messages beyond the window are not sent.</p>
+  <p>
+    <strong>Temporary chats</strong> are never written to local storage — closing
+    one loses it for good. They are still sent to xKiro to get a reply, so a
+    temporary chat is private on your device, not invisible to the provider.
+  </p>
+
+  <h3>Treat anything you send as leaving your device</h3>
+  <p>
+    Once a message reaches xKiro, what happens to it is governed by
+    <strong>their</strong> retention and training policies and those of the
+    underlying vendor — not by this app. Do not paste passwords, financial
+    details, medical records, or anyone else's personal information. Read
+    <a href="https://xkiro.com" target="_blank" rel="noopener">xkiro.com</a>
+    for the terms you are actually agreeing to.
+  </p>
+
+  <h2>Web search</h2>
+  <p>
+    When you switch on the magnifier in the composer, your <strong>search query
+    is sent to DuckDuckGo</strong>, and to <strong>Wikipedia</strong> if
+    DuckDuckGo returns nothing useful. The query travels through your local
+    server, so those services see your server's request rather than your
+    browser directly, but the text of the query does leave your device.
+  </p>
+  <ul>
+    <li>Only the message you send is used as the query — not your chat history.</li>
+    <li>Nothing is sent to either service while the toggle is off.</li>
+    <li>Retrieved snippets are attached to your conversation and therefore also go to xKiro.</li>
+    <li>No key or account is used for search, and neither service is told who you are by this app.</li>
+  </ul>
+
+  <h2>Money</h2>
+  <p>
+    Your billing relationship is with xKiro. The <strong>credit budget</strong> in
+    Settings is a local convenience: it estimates spend from reported token usage
+    so you can watch it move. It cannot see your balance, does not update your
+    account, and may drift from what you are really charged.
+  </p>
+  <div class="card">
+    <p><strong>Your xKiro dashboard is the only authoritative record of spending.</strong> Do not rely on the figure in this app for anything that matters.</p>
+  </div>
+
+  <h2>Terms</h2>
+  <ul>
+    <li>Provided as-is, with no warranty and no guarantee of availability or accuracy.</li>
+    <li><strong>Models get things wrong.</strong> Verify anything consequential — medical, legal, financial or safety-related — with a qualified human.</li>
+    <li>You are responsible for what you send and how you use what comes back, including complying with xKiro's terms and any applicable law.</li>
+    <li>Nothing here is liable for lost data, unexpected charges, or decisions made from model output.</li>
+    <li>The app is yours to modify. The parts it talks to are not.</li>
+  </ul>
+
+  <h2>Questions this page cannot answer</h2>
+  <p>
+    Whether xKiro or a vendor trains on your conversations, how long they keep
+    them, and where they are processed are their decisions to publish, not
+    facts this app can observe. Check
+    <a href="https://xkiro.com" target="_blank" rel="noopener">xkiro.com</a>
+    and the relevant vendor's policy.
+  </p>
+
+  <p class="upd">Last updated 30 August 2026. Describes the build you have installed.</p>
+</div>
+</body>
+</html>
