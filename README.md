@@ -31,7 +31,7 @@ controle de raciocínio e busca na web. **Zero dependências**: só Node 18+.
 ## Rodar localmente
 
 ```bash
-git clone https://github.com/SEU_USUARIO/kimo.git ~/kimo
+git clone [https://github.com/SEU_USUARIO/kimo.git] ~/kimo
 cd ~/kimo
 echo 'XKIRO_API_KEY=sk-xt-suachave' > .env
 node server.js
